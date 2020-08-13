@@ -1,9 +1,13 @@
 import express, { Request, Response } from 'express';
 import bodyParser from 'express';
 import cors from 'cors';
+
 import mongoose from 'mongoose';
 import helmet from 'helmet';
 
+// Import routers
+import exampleRoute from './routes/exampleRoute';
+import registerRoute from './routes/register.route';
 
 // Load environmental variables if in development
 if (process.env.NODE_ENV !== 'production') {
@@ -39,6 +43,9 @@ app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+// Connect routers
+app.use('/example', exampleRoute);
+app.use('/register', registerRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
