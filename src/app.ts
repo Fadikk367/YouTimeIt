@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'express';
 import cors from 'cors';
 
@@ -8,6 +8,7 @@ import helmet from 'helmet';
 // Import routers
 import exampleRoute from './routes/exampleRoute';
 import registerRoute from './routes/register.route';
+import loginRoute from './routes/login.route';
 
 // Load environmental variables if in development
 if (process.env.NODE_ENV !== 'production') {
@@ -46,6 +47,13 @@ app.use(bodyParser.json());
 // Connect routers
 app.use('/example', exampleRoute);
 app.use('/register', registerRoute);
+app.use('/login', loginRoute);
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error(err)
+
+  res.status(500).send('Something broke!')
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
