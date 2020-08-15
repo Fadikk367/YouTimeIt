@@ -10,7 +10,7 @@ import exampleRoute from './routes/exampleRoute';
 import registerRoute from './routes/register.route';
 import loginRoute from './routes/login.route';
 import serviceRoute from './routes/service.route';
-
+import visitsRoute from './routes/visits.route';
 
 // Import middlewares
 import { authUser } from './middlewares/authUser';
@@ -55,7 +55,7 @@ app.use('/example', authUser, exampleRoute);
 app.use('/register', registerRoute);
 app.use('/login', loginRoute);
 app.use('/services', authUser, serviceRoute);
-
+app.use('/visits', authUser, visitsRoute);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err)

@@ -2,9 +2,10 @@ import  { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoos
 import { UserDoc } from './User';
 import { ServiceDoc } from './Service';
 import { ClientDoc, ClientData } from './Client';
+import { Guest, GuestDoc } from './Guest';
 
 
-interface VisitAttrs {
+export interface VisitAttrs {
   parentId: UserDoc['_id'];
   date: Date;
   duration: string;
@@ -12,7 +13,7 @@ interface VisitAttrs {
   location: string;
   confirmed?: boolean;
   service?: ServiceDoc['_id'];
-  client?: ClientDoc['_id'];
+  client?: ClientDoc['_id'] | GuestDoc['_id'];
 }
 
 
@@ -25,8 +26,8 @@ export interface VisitDoc extends Document {
   confirmed: boolean;
   service?: ServiceDoc['_id'];
   client?: ClientDoc['_id'];
-  reserveForRegisteredCLient(client: ClientDoc, service: ServiceDoc): void;
-  reserveForUnregisteredClient(client: ClientData): void;
+  reserveForRegisteredCLient(client: ClientData, service: ServiceDoc): Promise<void>;
+  reserveForUnregisteredClient(client: ClientData): Promise<void>;
 }
 
 
@@ -43,7 +44,6 @@ const VisitSchema = new Schema({
     type: Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true,
     validate: (value: string): boolean => isValidObjectId(value)
   },
   date: {
@@ -66,6 +66,13 @@ const VisitSchema = new Schema({
   confirmed: {
     type: Boolean,
     default: false
+  },
+  service: {
+    type: Types.ObjectId,
+    ref: 'Service'
+  },
+  client: {
+    type: Types.ObjectId,
   }
 });
 
@@ -73,11 +80,15 @@ VisitSchema.statics.build = (doc: VisitAttrs): VisitDoc => {
   return new Visit(doc);
 }
 
-VisitSchema.methods.reserveForRegisteredCLient = async function(client: ClientDoc, service: ServiceDoc) {
+VisitSchema.statics.findAllByParentId = async (parentId: string): Promise<VisitDoc[]> => {
+  return await Visit.find({ parentId });
+}
+
+VisitSchema.methods.reserveForRegisteredCLient = async function(client: ClientData, service: ServiceDoc): Promise<void> {
   console.log('rezerwacja wizyty dla zarejestrowanego klienta');
 }
 
-VisitSchema.methods.reserveForUnregisteredClient = async function(client: ClientData, service: ServiceDoc) {
+VisitSchema.methods.reserveForUnregisteredClient = async function(client: ClientData, service: ServiceDoc): Promise<void> {
   console.log('rezerwacja wizyty dla NIEzarejestrowanego klienta');
 }
 
