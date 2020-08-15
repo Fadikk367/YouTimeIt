@@ -32,7 +32,6 @@ const ServiceSchema = new Schema({
     type: Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true,
     validate: (value: string): boolean => isValidObjectId(value)
   },
   name: {
@@ -62,7 +61,7 @@ ServiceSchema.statics.build = (doc: ServiceAttrs): ServiceDoc => {
 }
 
 ServiceSchema.statics.findAllByParentId = async (parentId: string): Promise<ServiceDoc[]> => {
-  return Service.find({ parentId }).exec();
+  return await Service.find({ parentId });
 }
 
 export const Service =  model<ServiceDoc, ServiceModel>('Service', ServiceSchema);

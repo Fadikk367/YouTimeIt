@@ -1,39 +1,30 @@
 import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose';
-import { UserDoc, User } from './User'; 
+import { UserDoc } from './User'; 
 import { VisitDoc } from './Visit';
 import { Role } from './common';
-
+import { ClientData } from './Client';
 import { emailValidator } from './common';
 
-export interface ClientData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  id?: string;
-}
 
-export interface ClientAttrs extends ClientData {
+export interface GuestAttrs extends ClientData {
   parentId: UserDoc['_id'],
-  password: string
 }
 
-export interface ClientDoc extends Document {
+export interface GuestDoc extends Document {
   parentId: UserDoc['_id'];
   firstName: string;
   lastName: string;
   email: string;
-  password: string;
   phone: string;
   role: Role;
   visits: VisitDoc['_id'][];
 }
 
-interface ClientModel extends Model<ClientDoc> {
-  build(doc: ClientAttrs): ClientDoc;
+interface GuestModel extends Model<GuestDoc> {
+  build(doc: GuestAttrs): GuestDoc;
 }
 
-const ClientSchema = new Schema({
+const GuestSchema = new Schema({
   parentId: {
     type: Types.ObjectId,
     ref: 'User',
@@ -54,19 +45,13 @@ const ClientSchema = new Schema({
     unique: true,
     validate: { validator:  emailValidator }
   },
-  password: {
-    type: String,
-    required: true,
-    min: 10,
-    max: 1024
-  },
   phone: {
     type: String,
     required: true
   },
   role: {
     type: String,
-    default: Role.CLIENT,
+    default: Role.GUEST,
     enum: Object.keys(Role)
   },
   visits: {
@@ -75,8 +60,8 @@ const ClientSchema = new Schema({
   }
 });
 
-ClientSchema.statics.build = (doc: ClientAttrs): ClientDoc => {
-  return new Client(doc);
+GuestSchema.statics.build = (doc: GuestAttrs): GuestDoc => {
+  return new Guest(doc);
 }
 
-export const Client = model<ClientDoc, ClientModel>('Client', ClientSchema);
+export const Guest = model<GuestDoc, GuestModel>('Guest', GuestSchema);

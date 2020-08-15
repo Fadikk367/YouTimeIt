@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import bodyParser from 'express';
 import cors from 'cors';
-
+import morgan from 'morgan';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
 
@@ -9,6 +9,11 @@ import helmet from 'helmet';
 import exampleRoute from './routes/exampleRoute';
 import registerRoute from './routes/register.route';
 import loginRoute from './routes/login.route';
+import serviceRoute from './routes/service.route';
+
+
+// Import middlewares
+import { authUser } from './middlewares/authUser';
 
 // Load environmental variables if in development
 if (process.env.NODE_ENV !== 'production') {
@@ -43,11 +48,14 @@ app.use(cors());
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(morgan('common'));
 
 // Connect routers
-app.use('/example', exampleRoute);
+app.use('/example', authUser, exampleRoute);
 app.use('/register', registerRoute);
 app.use('/login', loginRoute);
+app.use('/services', authUser, serviceRoute);
+
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err)

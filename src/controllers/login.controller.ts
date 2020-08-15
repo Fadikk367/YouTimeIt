@@ -5,19 +5,16 @@ import { findAccount, checkPassword, generateToken } from '../services/login.ser
 interface LoginRequest extends Request {
   body: {
     email: string;
-    passowrd: string;
+    password: string;
   }
 }
 
 export const login = async (req: LoginRequest, res: Response, next: NextFunction) => {
-  const { email, passowrd } = req.body;
-  console.log({ email, passowrd });
+  const { email, password } = req.body;
 
   try {
     const account = await findAccount(email);
-    console.log({ account })
-    await checkPassword(passowrd, account);
-    console.log('password checked');
+    await checkPassword(password, account);
     const token = await generateToken(account);
     res.send({ token, account });
   } catch(err) {

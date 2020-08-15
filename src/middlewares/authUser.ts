@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-import { Role } from 'models/common';
-import { User, Client } from 'models';
+import { Role } from '../models/common';
+import { User, Client } from '../models';
 
 
 interface TokenPayload {
@@ -14,25 +14,25 @@ interface TokenPayload {
 export const authUser = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.header('auth-token');
 
-  if (token) {
-    try {
-      const secret = process.env.TOKRN_SECRET as string;
+  try {
+    if (token) {
+      const secret = process.env.TOKEN_SECRET as string;
       const blueprint = await jwt.verify(token, secret) as TokenPayload;
+      const { role } = blueprint;
 
-      const role = blueprint.role;
       if (role === Role.USER) {
-        handleUserRequest(req, blueprint);
+        await handleUserRequest(req, blueprint);
       } else if (role === Role.CLIENT) {
-        handleClientRequest(req, blueprint);
+        await handleClientRequest(req, blueprint);
       }
       next();
-    } catch(err) {
-      console.error(err);
-      res.status(400).json({ message: err.message })
+    } else {
+      await handleUnregisteredRequest(req);
+      next();
     }
-  } else {
-    handleUnregisteredRequest(req);
-    next();
+  } catch(err) {
+    console.error(err);
+    next(err);
   }
 }
 
@@ -62,15 +62,17 @@ const handleClientRequest = async (req: Request, blueprint: TokenPayload): Promi
   }
 }
 
-const handleUnregisteredRequest = (req: Request): void => {
+const handleUnregisteredRequest = async (req: Request): Promise<void> => {
   const parentId = req.header('parent-id');
-  if (!parentId) {
+  const user = await User.findOne({ _id: parentId });
+  
+  if (!user) {
     throw new Error('ParentId has not been provided in a "parent-id" header for an unregistered user');
   }
 
   req.auth = {
     id: null,
     role: Role.GUEST,
-    parentId: parentId
+    parentId: user._id
   }
 }
