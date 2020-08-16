@@ -29,7 +29,6 @@ export const checkIfUserAlreadyExists = async (uniqueData: UserUniqueData, sessi
 
 
 export const createUserAccount = async (userData: UserAttrs, session: ClientSession): Promise<UserDoc> => {
-  console.log(userData);
   const user = User.build({
     ...userData,
     password: await hashPassword(userData.password)

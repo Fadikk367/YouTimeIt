@@ -1,17 +1,17 @@
-import  { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose';
+import  { Document, Model, Types, Schema, model, isValidObjectId, ClientSession } from 'mongoose';
 import { UserDoc } from './User';
 import { ServiceDoc } from './Service';
 import { ClientDoc, ClientData } from './Client';
 import { Guest, GuestDoc } from './Guest';
+import { VisitStatus, Role } from './common';
 
 
 export interface VisitAttrs {
   parentId: UserDoc['_id'];
   date: Date;
   duration: string;
-  free?: boolean;
   location: string;
-  confirmed?: boolean;
+  status?: VisitStatus;
   service?: ServiceDoc['_id'];
   client?: ClientDoc['_id'] | GuestDoc['_id'];
 }
@@ -21,13 +21,13 @@ export interface VisitDoc extends Document {
   parentId: UserDoc['_id'];
   date: Date;
   duration: string;
-  free: boolean;
   location: string;
-  confirmed: boolean;
+  status: VisitStatus;
   service?: ServiceDoc['_id'];
   client?: ClientDoc['_id'];
-  reserveForRegisteredCLient(client: ClientData, service: ServiceDoc): Promise<void>;
-  reserveForUnregisteredClient(client: ClientData): Promise<void>;
+  queue: string[];
+  reserve(clientId: string, serviceId: string, role: Role, session: ClientSession): Promise<void>;
+  clear(session?: ClientSession): Promise<void>
 }
 
 
@@ -54,18 +54,22 @@ const VisitSchema = new Schema({
     type: String,
     required: true,
   },
-  free: {
-    type: Boolean,
-    default: true,
-  },
   location: {
     type: String,
     required: true,
     max: 80
   },
-  confirmed: {
-    type: Boolean,
-    default: false
+  status: {
+    type: String,
+    default: VisitStatus.FREE,
+    enum: Object.keys(VisitStatus)
+  },
+  queue: {
+    type: [{
+      client: { type: Types.ObjectId, ref: 'Client'}, 
+      service: { type: Types.ObjectId, ref: 'Service'} 
+    }],
+    default: []
   },
   service: {
     type: Types.ObjectId,
@@ -84,12 +88,33 @@ VisitSchema.statics.findAllByParentId = async (parentId: string): Promise<VisitD
   return await Visit.find({ parentId });
 }
 
-VisitSchema.methods.reserveForRegisteredCLient = async function(client: ClientData, service: ServiceDoc): Promise<void> {
-  console.log('rezerwacja wizyty dla zarejestrowanego klienta');
+VisitSchema.methods.reserve = async function(
+  clientId: string, 
+  serviceId: string, 
+  role: Role,
+  session: ClientSession
+): Promise<void> {
+  console.log(`rezerwacja wizyty dla ${role === Role.GUEST ? 'NIE' : ''}zarejestrowanego klienta`);
+  this.client = clientId;
+  this.service = serviceId;
+
+  if (role === Role.GUEST) this.status = VisitStatus.PENDING;
+  else if (role === Role.CLIENT) this.status = VisitStatus.CONFIRMED;
+
+  // await this.save({ session });
 }
 
-VisitSchema.methods.reserveForUnregisteredClient = async function(client: ClientData, service: ServiceDoc): Promise<void> {
-  console.log('rezerwacja wizyty dla NIEzarejestrowanego klienta');
+VisitSchema.methods.clear = async function(session?: ClientSession): Promise<void> {
+  this.client = undefined;
+  this.service = undefined;
+  this.status = VisitStatus.FREE;
+
+  await this.save(session ? { session } : {});
+}
+
+
+VisitSchema.methods.addToQueue = async function(client: ClientData): Promise<void> {
+  console.log('dodanie do kolejki zarejestrowanego klienta');
 }
 
 

@@ -1,4 +1,5 @@
 import 'express';
+import { Role } from '../models/common';
 
 interface Auth {
   id: string | null;

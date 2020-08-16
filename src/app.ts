@@ -55,11 +55,9 @@ app.use('/example', authUser, exampleRoute);
 app.use('/register', registerRoute);
 app.use('/login', loginRoute);
 app.use('/services', authUser, serviceRoute);
-app.use('/visits', authUser, visitsRoute);
+app.use('/visits', visitsRoute);
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err)
-
   res.status(500).send('Something broke!')
 });
 

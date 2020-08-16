@@ -16,7 +16,6 @@ export const findAccount = async (email: string): Promise<UserDoc | ClientDoc> =
 }
 
 export const checkPassword = async (password: string, account: UserDoc | ClientDoc): Promise<void> => {
-  console.log({password, account});
   const isValidPassword = await bcrypt.compare(password, account.password);
   if (!isValidPassword) {
     // Statement about email included for security reasons

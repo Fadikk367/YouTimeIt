@@ -55,7 +55,7 @@ const GuestSchema = new Schema({
     enum: Object.keys(Role)
   },
   visits: {
-    type: [String],
+    type: [{ type: Types.ObjectId, ref: 'Visit'}],
     default: []
   }
 });

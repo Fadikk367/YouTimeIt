@@ -27,6 +27,7 @@ export interface ClientDoc extends Document {
   phone: string;
   role: Role;
   visits: VisitDoc['_id'][];
+  addVisit(visitId: string): Promise<ClientDoc>;
 }
 
 interface ClientModel extends Model<ClientDoc> {
@@ -70,13 +71,18 @@ const ClientSchema = new Schema({
     enum: Object.keys(Role)
   },
   visits: {
-    type: [String],
+    type: [{ type: Types.ObjectId, ref: 'Visits' }],
     default: []
   }
 });
 
 ClientSchema.statics.build = (doc: ClientAttrs): ClientDoc => {
   return new Client(doc);
+}
+
+ClientSchema.methods.addVisit = async function(visitId: string): Promise<ClientDoc> {
+  this.visits.push(visitId);
+  return await this.save();
 }
 
 export const Client = model<ClientDoc, ClientModel>('Client', ClientSchema);
