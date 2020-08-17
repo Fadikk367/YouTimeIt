@@ -4,6 +4,8 @@ import { Visit, VisitDoc, Service, Guest, ClientData, Client, ClientDoc } from '
 import { Role, Auth, VisitStatus } from '../models/common';
 import { generateToken } from '../services/common';
 
+import { EmailMessage, GmailMailer } from '../utils/mailer';
+
 const visitConfirmationTime = 1000*60*10;
 
 
@@ -42,7 +44,17 @@ export const handleGuestReservation = async (
 
   await visit.reserve(guest._id, serviceId, role, session);
   const confirmationToken = await generateToken({ visitId: visit._id }, visitConfirmationTime);
-  console.log(`${req.protocol}://visits/${confirmationToken}/confirm`);
+  console.log(`${req.protocol}://localhost:5000/visits/${confirmationToken}/confirm`);
+
+  const mailer = GmailMailer.getInstance();
+  const message = new EmailMessage(
+    'Potwierdzenie wizyty',
+    'adrian.furman.dev@gmail.com',
+    ['fadikk367@gmail.com'],
+    `${req.protocol}://localhost:5000/visits/${confirmationToken}/confirm`
+  );
+
+  await GmailMailer.send(message);
 
   setTimeout(
     () => checkVisitConfrmation(visit._id), 

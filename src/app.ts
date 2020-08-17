@@ -4,6 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
+import { GmailMailer } from './utils/mailer';
 
 // Import routers
 import exampleRoute from './routes/exampleRoute';
@@ -38,7 +39,10 @@ mongoose.connect(
   () => {
     console.log(`Connected to the database`);
   }
-)
+);
+
+GmailMailer.getInstance();
+GmailMailer.authentificate();
 
 
 const app = express();

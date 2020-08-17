@@ -13,6 +13,6 @@ router.put('/:visitId', authUser, authRole(Role.USER), controller.updateVisit);
 router.delete('/:visitId', authUser, authRole(Role.USER), controller.deleteVisit);
 router.put('/:visitId/reserve', authUser, authRole(Role.GUEST, Role.CLIENT), controller.reserveVisit);
 router.put('/:visitId/cancel', authUser, authRole(Role.CLIENT), controller.cancelVisit);
-router.put('/confirm/:token', controller.confirmVisit);
+router.get('/confirm/:token', controller.confirmVisit);
 
 export default router;
