@@ -7,6 +7,7 @@ import { generateToken } from '../services/common';
 import { EmailMessage, GmailMailer } from '../utils/mailer';
 
 const visitConfirmationTime = 1000*60*10;
+const MILISECONDS_IN_DAY = 1000*60*60*24
 
 
 export const handleReservation = async (visit: VisitDoc, req: Request, session: ClientSession): Promise<void> => {
@@ -19,7 +20,7 @@ export const handleReservation = async (visit: VisitDoc, req: Request, session: 
   if (role === Role.GUEST) {
     await handleGuestReservation(visit, serviceId , req, session);
   } else if (role === Role.CLIENT) {
-    await visit.reserve(id as string, serviceId, role, session);
+    await handleClientReservation(visit, serviceId, id as string, session);
   }
 }
 
@@ -46,12 +47,11 @@ export const handleGuestReservation = async (
   const confirmationToken = await generateToken({ visitId: visit._id }, visitConfirmationTime);
   console.log(`${req.protocol}://localhost:5000/visits/${confirmationToken}/confirm`);
 
-  const mailer = GmailMailer.getInstance();
   const message = new EmailMessage(
     'Potwierdzenie wizyty',
     'adrian.furman.dev@gmail.com',
     ['fadikk367@gmail.com'],
-    `${req.protocol}://localhost:5000/visits/${confirmationToken}/confirm`
+    `${req.protocol}://localhost:5000/visits/confirm${confirmationToken}`
   );
 
   await GmailMailer.send(message);
@@ -96,6 +96,6 @@ export const checkVisitConfrmation = async (visitId: string): Promise<void> => {
 export const checkTimingBeforeCancelling = (visit: VisitDoc): void => {
   const { date } = visit;
   const currentTime = new Date();
-  if (date.getTime() - currentTime.getTime() <= 24*60*60*1000)
-    throw new Error('Sorry, it is too late to cancell your visit');
+  if (date.getTime() - currentTime.getTime() <= MILISECONDS_IN_DAY)
+    throw new Error('Sorry, it is too late to cancel your visit');
 }

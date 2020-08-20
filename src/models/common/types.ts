@@ -9,13 +9,21 @@ export enum Plan {
 export enum Role {
   CLIENT = 'CLIENT',
   USER = 'USER',
-  GUEST = 'GUEST'
+  GUEST = 'GUEST',
+  ADMIN = 'ADMIN'
 }
 
 export enum VisitStatus {
   FREE = 'FREE',
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED'
+}
+
+export enum Permissions {
+  VISITS_CREATE = 'VISITS_CREATE',
+  VISITS_READ = 'VISITS_READ',
+  VISITS_UPDATE = 'VISITS_UPDATE',
+  VISITS_DELETE = 'VISITS_DELETE'
 }
 
 

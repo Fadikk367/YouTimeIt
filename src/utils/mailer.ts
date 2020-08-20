@@ -30,6 +30,7 @@ export class EmailMessage {
   }
 }
 
+
 export class GmailMailer {
   private static instance: GmailMailer;
   private static google: GoogleApis = google;
