@@ -1,88 +1,45 @@
-import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose';
-import { UserDoc, User } from './User'; 
-import { VisitDoc } from './Visit';
+import mongoose, { Model, Types } from 'mongoose';
 import { Role } from './common';
 
-import { emailValidator } from './common';
+import { options, UserAttrs, UserDoc, User } from './User';
 
-export interface ClientData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  id?: string;
-}
-
-export interface ClientAttrs extends ClientData {
-  parentId: UserDoc['_id'],
-  password: string
-}
-
-export interface ClientDoc extends Document {
-  parentId: UserDoc['_id'];
-  firstName: string;
-  lastName: string;
-  email: string;
+export interface ClientAttrs extends UserAttrs {
   password: string;
-  phone: string;
-  role: Role;
-  visits: VisitDoc['_id'][];
-  addVisit(visitId: string): Promise<ClientDoc>;
 }
 
-interface ClientModel extends Model<ClientDoc> {
+
+export interface ClientDoc extends UserDoc {
+  password: string;
+  visits: string[];
+  addVisit(visitId: string): void;
+}
+
+
+export interface ClientModel extends Model<ClientDoc> {
   build(doc: ClientAttrs): ClientDoc;
 }
 
-const ClientSchema = new Schema({
-  parentId: {
-    type: Types.ObjectId,
-    ref: 'User',
-    required: true,
-    validate: (value: string): boolean => isValidObjectId(value)
-  },
-  firstName: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    validate: { validator:  emailValidator }
-  },
+
+const ClientSpecificSchema = new mongoose.Schema<ClientDoc>({
   password: {
-    type: String,
-    required: true,
-    min: 10,
-    max: 1024
-  },
-  phone: {
     type: String,
     required: true
   },
-  role: {
-    type: String,
-    default: Role.CLIENT,
-    enum: Object.keys(Role)
-  },
   visits: {
-    type: [{ type: Types.ObjectId, ref: 'Visits' }],
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Visit' }],
     default: []
   }
-});
+}, options);
 
-ClientSchema.statics.build = (doc: ClientAttrs): ClientDoc => {
-  return new Client(doc);
+
+ClientSpecificSchema.statics.build = (doc: ClientAttrs): ClientDoc => {
+  return new Client({ ...doc, role: Role.CLIENT });
 }
 
-ClientSchema.methods.addVisit = async function(visitId: string): Promise<ClientDoc> {
+
+ClientSpecificSchema.methods.addVisit = function (visitId: string): void {
   this.visits.push(visitId);
-  return await this.save();
 }
 
-export const Client = model<ClientDoc, ClientModel>('Client', ClientSchema);
+
+export const Client = User.discriminator<ClientDoc, ClientModel>('Client', ClientSpecificSchema);

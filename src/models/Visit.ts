@@ -13,7 +13,7 @@ export interface VisitAttrs {
   location: string;
   status?: VisitStatus;
   service?: ServiceDoc['_id'];
-  client?: ClientDoc['_id'] | GuestDoc['_id'];
+  client?: UserDoc['_id'];
 }
 
 
@@ -42,7 +42,7 @@ interface VisitModel extends Model<VisitDoc> {
 const VisitSchema = new Schema({
   parentId: {
     type: Types.ObjectId,
-    ref: 'User',
+    ref: 'Business',
     required: true,
     validate: (value: string): boolean => isValidObjectId(value)
   },
@@ -66,8 +66,7 @@ const VisitSchema = new Schema({
   },
   queue: {
     type: [{
-      client: { type: Types.ObjectId, ref: 'Client'}, 
-      service: { type: Types.ObjectId, ref: 'Service'} 
+      client: { type: Types.ObjectId, ref: 'Client'}
     }],
     default: []
   },

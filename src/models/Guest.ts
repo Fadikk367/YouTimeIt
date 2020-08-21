@@ -2,7 +2,6 @@ import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose
 import { UserDoc } from './User'; 
 import { VisitDoc } from './Visit';
 import { Role } from './common';
-import { ClientData } from './Client';
 import { emailValidator } from './common';
 
 

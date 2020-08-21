@@ -1,34 +1,29 @@
-import { Document, Model, Schema, model } from 'mongoose';
-import { emailValidator } from './common';
-import { Role, Plan } from './common';
+import mongoose, { Document, Model, Types } from 'mongoose';
+import { Role } from './common';
+
+
+export const options = {
+  discriminatorKey: '_type',
+  timestamps: true
+};
 
 
 export interface UserAttrs {
+  businessId?: string;
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
-  businessName: string;
   phone: string;
-  plan?: Plan;
 }
 
 
 export interface UserDoc extends Document {
+  businessId: string;
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
-  businessName: string;
   phone: string;
   role: Role;
-  plan: Plan;
-  permissions: string[];
-  payments: {
-    date: Date;
-    amount: Number;
-    plan: String;
-  }[],
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,63 +34,39 @@ export interface UserModel extends Model<UserDoc> {
 }
 
 
-const UserSchema = new Schema({
+const UserSchema = new mongoose.Schema<UserDoc>({
+  businessId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'Business',
+    required: [true, 'TUTAJ MUSI BYC ID BOIZNESU']
+  },
   email: {
     type: String,
     required: true,
     unique: true,
-    validate: { validator:  emailValidator }
-  },
-  password: {
-    type: String,
-    required: true,
-    min: 10,
-    max: 1024
   },
   firstName: {
     type: String,
-    required: true,
+    required: [true, 'Imię jest wymagane']
   },
   lastName: {
     type: String,
-    required: true,
-  },
-  businessName: {
-    type: String,
-    required: true,
-    max: 60
+    required: [true, 'Nazwisko jest wymagane']
   },
   phone: {
     type: String,
-    required: true
+    required: [true, 'Numer telefony jest wymagany'],
+    unique: true
   },
   role: {
     type: String,
-    default: Role.USER,
+    default: Role.GUEST,
     enum: Object.keys(Role)
   },
-  plan: {
-    type: String,
-    default: Plan.DEMO
-  },
-  permissions: {
-    type: [String],
-    default: []
-  },
-  payments: {
-    type: [{
-      date: Date,
-      amount: Number,
-      plan: String
-    }],
-    default: []
-  }
-}, {
-  timestamps: true
-});
+}, options);
 
 UserSchema.statics.build = (doc: UserAttrs): UserDoc => {
-  return new User(doc);
+  return new User({ ...doc, role: Role.GUEST });
 }
 
-export const User =  model<UserDoc, UserModel>('User', UserSchema);
+export const User =  mongoose.model<UserDoc, UserModel>('User', UserSchema);

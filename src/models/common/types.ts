@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 export enum Plan {
   DEMO = 'DEMO',
   BASIC = 'BASIC',
@@ -27,7 +29,7 @@ export enum Permissions {
 }
 
 
-export interface UserUniqueData {
+export interface EntitiesUniqueData {
   email: string;
   phone: string;
   businessName?: string;
@@ -37,4 +39,9 @@ export interface Auth {
   id: string | null;
   role: Role;
   parentId: string; 
+}
+
+
+export interface MyRequest<T> extends Request {
+  body: T;
 }

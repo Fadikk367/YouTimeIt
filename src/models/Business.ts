@@ -3,14 +3,14 @@ import { Plan } from './common';
 import { User } from './User';
 import { ServiceDoc } from './Service';
 
-interface BusinessAttrs {
+export interface BusinessAttrs {
   name: string;
   owner: string;
   description: string;
 }
 
 
-interface BusinessDoc extends Document {
+export interface BusinessDoc extends Document {
   name: string;
   owner: string;
   description: string;
@@ -23,7 +23,7 @@ interface BusinessDoc extends Document {
   }[],
 }
 
-interface BusinessModel extends Model<BusinessDoc> {
+export interface BusinessModel extends Model<BusinessDoc> {
   build(doc: BusinessAttrs): BusinessDoc;
 }
 
@@ -31,19 +31,19 @@ const BusinessSchema = new mongoose.Schema<BusinessDoc>({
   name: {
     type: String,
     unique: true,
-    required: true
+    required: [true, 'Nawza biznesu jest wymagana']
   },
   owner: {
-    type: Types.ObjectId,
+    type: mongoose.Types.ObjectId,
     ref: 'User',
     required: true
   },
   description: {
     type: String,
-    required: true
+    required: [true, 'Opis biznesu jest wymagany']
   },
   employees: {
-    type: [{ type: Types.ObjectId, ref: 'Admin' }],
+    type: [{ type: mongoose.Types.ObjectId, ref: 'Admin' }],
     ref: 'Admin',
     default: []
   },
@@ -68,4 +68,4 @@ BusinessSchema.statics.build = function(doc: BusinessAttrs): BusinessDoc {
 }
 
 
-const Business = model<BusinessDoc, BusinessModel>('Business', BusinessSchema);
+export const Business = model<BusinessDoc, BusinessModel>('Business', BusinessSchema);

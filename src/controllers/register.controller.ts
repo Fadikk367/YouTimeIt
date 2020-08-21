@@ -1,53 +1,57 @@
 import { Request, Response, NextFunction} from 'express';
-import { UserAttrs, ClientAttrs } from '../models';
+import { AdminAttrs, BusinessAttrs, ClientAttrs } from '../models';
+import { Permissions } from '../models/common';
 import mongoose from 'mongoose';
 
 import { 
-  checkIfUserAlreadyExists, 
-  createUserAccount, 
-  createClientAccount 
+  createAdminAccount, 
+  createBusinessEnitity,
 } from '../services/register.services';
 
 
-interface UserRegisterRequest extends Request {
-  body: UserAttrs
+interface AdminRegisterAttrs {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+  phone: string;
+  permissions?: Permissions[]
 }
 
-interface ClientRegisterRequest extends Request {
-  body: ClientAttrs
+
+interface BusinessRegisterAttrs {
+  name: string;
+  description: string;
 }
 
-export const registerUser = async (req: UserRegisterRequest, res: Response, next: NextFunction) => {
-  const userData = req.body;
-  const session = await mongoose.startSession();
-  await session.startTransaction();
 
-  try {
-    await checkIfUserAlreadyExists(userData, session);
-    const user = await createUserAccount(userData, session);
-    await session.commitTransaction();
-    session.endSession();
-    res.json(user);
-  } catch(err) {
-    console.error(err);
-    next(err);
+interface AdminRegisterRequest extends Request {
+  body: {
+    adminAttrs: AdminRegisterAttrs;
+    businessAttrs: BusinessRegisterAttrs;
   }
 }
 
 
-export const registerClient = async (req: ClientRegisterRequest, res: Response, next: NextFunction) => {
-  const clientData = req.body;
-  const session = await mongoose.startSession();
-  session.startTransaction();
+export const registerAdmin = async (req: AdminRegisterRequest, res: Response, next: NextFunction) => {
+  const { adminAttrs, businessAttrs } = req.body;
 
   try {
-    await checkIfUserAlreadyExists(clientData, session);
-    const client = await createClientAccount(clientData, session);
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    const admin = await createAdminAccount(adminAttrs, session);
+    const business = createBusinessEnitity({ ...businessAttrs, owner: admin._id }, session);
+    admin.businessId = business._id;
+
+    await admin.save({ session });
+    await business.save({ session });
+
     await session.commitTransaction();
     session.endSession();
-    res.json(client);
+
+    res.json({ admin, business });
   } catch(err) {
-    console.error(err);
     next(err);
   }
 }

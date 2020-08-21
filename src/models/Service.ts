@@ -2,7 +2,7 @@ import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose
 import { UserDoc } from './User';
 
 export interface ServiceAttrs {
-  parentId: UserDoc['_id'],
+  parentId: string,
   name: string,
   description: string,
   price: number,
@@ -12,7 +12,7 @@ export interface ServiceAttrs {
 
 
 export interface ServiceDoc extends Document {
-  parentId: UserDoc['_id'],
+  parentId: string,
   name: string,
   description: string,
   price: number,
@@ -27,7 +27,7 @@ interface ServiceModel extends Model<ServiceDoc> {
 }
 
 
-const ServiceSchema = new Schema({
+const ServiceSchema = new Schema<ServiceDoc>({
   parentId: {
     type: Types.ObjectId,
     ref: 'User',
