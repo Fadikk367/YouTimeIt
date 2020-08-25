@@ -1,13 +1,19 @@
 import  { Document, Model, Types, Schema, model, isValidObjectId, ClientSession } from 'mongoose';
 import { UserDoc } from './User';
 import { ServiceDoc } from './Service';
-import { ClientDoc, ClientData } from './Client';
+import { ClientDoc } from './Client';
 import { Guest, GuestDoc } from './Guest';
 import { VisitStatus, Role } from './common';
 
+interface VisitFilters {
+  service?: string;
+  page?: number;
+  limit?: number;
+}
+
 
 export interface VisitAttrs {
-  parentId: UserDoc['_id'];
+  businessId: UserDoc['_id'];
   date: Date;
   duration: string;
   location: string;
@@ -18,7 +24,7 @@ export interface VisitAttrs {
 
 
 export interface VisitDoc extends Document {
-  parentId: UserDoc['_id'];
+  businessId: UserDoc['_id'];
   date: Date;
   duration: string;
   location: string;
@@ -26,21 +32,24 @@ export interface VisitDoc extends Document {
   service?: ServiceDoc['_id'];
   client?: ClientDoc['_id'];
   queue: string[];
+  setService(service: ServiceDoc): void;
   reserve(clientId: string, serviceId: string, role: Role, session: ClientSession): Promise<void>;
-  clear(session?: ClientSession): Promise<void>
+  addToQueue(client: ClientData): Promise<void>;
+  clear(session?: ClientSession): Promise<void>;
 }
 
 
 interface VisitModel extends Model<VisitDoc> {
   build(doc: VisitAttrs): VisitDoc;
-  findAllByParentId(parentId: UserDoc['_id']): Promise<VisitDoc[]>;
-  findAllByClientId(parentId: ClientDoc['_id']): Promise<VisitDoc[]>;
+  findAllByBusinessId(businessId: UserDoc['_id']): Promise<VisitDoc[]>;
+  findAllByClientId(businessId: ClientDoc['_id']): Promise<VisitDoc[]>;
   findAllFree(): Promise<VisitDoc[]>;
+  getVisits(businessId: string, filters?: VisitFilters): Promise<VisitDoc[]>;
 }
 
 
-const VisitSchema = new Schema({
-  parentId: {
+const VisitSchema = new Schema<VisitDoc>({
+  businessId: {
     type: Types.ObjectId,
     ref: 'Business',
     required: true,
@@ -71,8 +80,13 @@ const VisitSchema = new Schema({
     default: []
   },
   service: {
-    type: Types.ObjectId,
-    ref: 'Service'
+    type: {
+      price: Number,
+      serviceId: {
+        type: Types.ObjectId,
+        required: true,
+        ref: 'Service'
+      },
   },
   client: {
     type: Types.ObjectId,
@@ -83,8 +97,31 @@ VisitSchema.statics.build = (doc: VisitAttrs): VisitDoc => {
   return new Visit(doc);
 }
 
-VisitSchema.statics.findAllByParentId = async (parentId: string): Promise<VisitDoc[]> => {
-  return await Visit.find({ parentId });
+VisitSchema.statics.findAllByBusinessId = async (businessId: string): Promise<VisitDoc[]> => {
+  return await Visit.find({ businessId });
+}
+
+VisitSchema.statics.getVisits = async function(businessId: string, filters: VisitFilters): Promise<VisitDoc[]> {
+  const query = Visit.find();
+  query.where({ businessId });
+
+  if (filters.service) 
+    query.where({ service: filters.service});
+  
+  if (filters.limit)
+   query.limit(filters.limit);
+
+  if (filters.page)
+    query.skip(filters.page * (filters.limit || 10));
+
+  return await query.exec();
+}
+
+VisitSchema.methods.setService = function(service: ServiceDoc): void {
+  this.service = {
+    price: service.price,
+    serviceId: service._id,
+  }
 }
 
 VisitSchema.methods.reserve = async function(
@@ -115,6 +152,7 @@ VisitSchema.methods.clear = async function(session?: ClientSession): Promise<voi
 VisitSchema.methods.addToQueue = async function(client: ClientData): Promise<void> {
   console.log('dodanie do kolejki zarejestrowanego klienta');
 }
+
 
 
 export const Visit =  model<VisitDoc, VisitModel>('Visit', VisitSchema);

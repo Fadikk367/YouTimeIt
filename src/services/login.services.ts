@@ -1,12 +1,12 @@
-import { User, Client, UserDoc, ClientDoc } from '../models';
+import { Admin, Client, AdminDoc, ClientDoc } from '../models';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 
 
-export const findAccount = async (email: string): Promise<UserDoc | ClientDoc> => {
+export const findAccount = async (email: string): Promise<AdminDoc | ClientDoc> => {
   const client = await Client.findOne({ email });
   if (!client) {
-    const user = await User.findOne({ email });
+    const user = await Admin.findOne({ email });
     if(!user) {
       throw new Error('Invalid email or password');
     }
@@ -15,7 +15,7 @@ export const findAccount = async (email: string): Promise<UserDoc | ClientDoc> =
   return client;
 }
 
-export const checkPassword = async (password: string, account: UserDoc | ClientDoc): Promise<void> => {
+export const checkPassword = async (password: string, account: AdminDoc | ClientDoc): Promise<void> => {
   const isValidPassword = await bcrypt.compare(password, account.password);
   if (!isValidPassword) {
     // Statement about email included for security reasons
@@ -23,7 +23,7 @@ export const checkPassword = async (password: string, account: UserDoc | ClientD
   }
 }
 
-export const generateToken = async (account: UserDoc | ClientDoc): Promise<string> => {
+export const generateToken = async (account: AdminDoc | ClientDoc): Promise<string> => {
   const secret = process.env.TOKEN_SECRET as string;
   const token = await jwt.sign({
     _id: account._id,

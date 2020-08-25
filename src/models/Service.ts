@@ -2,7 +2,7 @@ import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose
 import { UserDoc } from './User';
 
 export interface ServiceAttrs {
-  parentId: string,
+  businessId?: string,
   name: string,
   description: string,
   price: number,
@@ -12,7 +12,7 @@ export interface ServiceAttrs {
 
 
 export interface ServiceDoc extends Document {
-  parentId: string,
+  businessId: string,
   name: string,
   description: string,
   price: number,
@@ -23,14 +23,14 @@ export interface ServiceDoc extends Document {
 
 interface ServiceModel extends Model<ServiceDoc> {
   build(doc: ServiceAttrs): ServiceDoc;
-  findAllByParentId(parentId: string): Promise<ServiceDoc[]>;
+  findAllBybusinessId(businessId: string): Promise<ServiceDoc[]>;
 }
 
 
 const ServiceSchema = new Schema<ServiceDoc>({
-  parentId: {
+  businessId: {
     type: Types.ObjectId,
-    ref: 'User',
+    ref: 'Nusiness',
     required: true,
     validate: (value: string): boolean => isValidObjectId(value)
   },
@@ -60,8 +60,8 @@ ServiceSchema.statics.build = (doc: ServiceAttrs): ServiceDoc => {
   return new Service(doc);
 }
 
-ServiceSchema.statics.findAllByParentId = async (parentId: string): Promise<ServiceDoc[]> => {
-  return await Service.find({ parentId });
+ServiceSchema.statics.findAllBybusinessId = async (businessId: string): Promise<ServiceDoc[]> => {
+  return await Service.find({ businessId });
 }
 
 export const Service =  model<ServiceDoc, ServiceModel>('Service', ServiceSchema);

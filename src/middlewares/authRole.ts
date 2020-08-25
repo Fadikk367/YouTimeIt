@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
+import { Forbidden } from 'http-errors';
 import { Role } from 'models/common';
 
 
 export const authRole = (...roles: Role[]) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const userRole = req.auth?.role;
-    if (!roles.find(role => role === userRole)) {
-      res.status(403).json({ message: 'Access denied' });
-      return;
+    const userRole = req.user?.role;
+    if (!userRole || !roles.find(role => role === userRole)) {
+      throw new Forbidden();
     }
     next();
   }
