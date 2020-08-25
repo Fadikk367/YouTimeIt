@@ -1,5 +1,6 @@
 import 'express';
 import { Role } from '../models/common';
+import { UserDoc } from 'models';
 
 interface Auth {
   id: string | null;
@@ -10,5 +11,6 @@ interface Auth {
 declare module 'express' {
   export interface Request {
     auth?: Auth;
+    user?: UserDoc;
   }
 }
