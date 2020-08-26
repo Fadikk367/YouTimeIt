@@ -3,6 +3,7 @@ import { ClientAttrs, Visit, Service, ServiceAttrs, UserDoc, VisitAttrs } from '
 import mongoose from 'mongoose';
 
 import { createClientAccount } from '../services/business.services';
+import { NotFound } from 'http-errors';
 
 
 interface ClientRegisterRequest extends Request {
@@ -85,12 +86,24 @@ export const createService = async (req: ServiceCreateRequest, res: Response, ne
 
 export const createVisit = async (req: VisitCreateRequest, res: Response, next: NextFunction) => {
   const user = req.user as UserDoc;
-  const visitAttrs = req.body.visitAttrs;
-  const serviceAttrs = req.body.serviceAttrs;
+  const visitAttrs = req.body;
+  const serviceId = req.query.service;
 
   try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     const visit = await Visit.build({ ...visitAttrs, businessId: user.businessId });
-    const createdVisit = await visit.save();
+    const service = await Service.findOne({ _id: serviceId, businessId: user.businessId }).session(session);
+    if(!service) 
+      throw new NotFound('Such service does not exist');
+    
+    visit.setService(service);
+    const createdVisit = await visit.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(201).json(createdVisit);
   } catch(err) {
     next(err);

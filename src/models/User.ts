@@ -18,7 +18,7 @@ export interface UserAttrs {
 
 
 export interface UserDoc extends Document {
-  businessId: string;
+  businessId: Types.ObjectId;
   email: string;
   firstName: string;
   lastName: string;

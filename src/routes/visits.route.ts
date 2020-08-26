@@ -6,13 +6,13 @@ import { Role } from '../models/common';
 
 const router = Router();
 
-router.get('/', authUser, controller.getAllVisits);
+// router.get('/', authUser, controller.getAllVisits);
 router.get('/:visitId', authUser, controller.getSingleVisit);
-router.post('/', authUser, authRole(Role.USER), controller.createVisit);
-router.put('/:visitId', authUser, authRole(Role.USER), controller.updateVisit);
-router.delete('/:visitId', authUser, authRole(Role.USER), controller.deleteVisit);
-router.put('/:visitId/reserve', authUser, authRole(Role.GUEST, Role.CLIENT), controller.reserveVisit);
-router.put('/:visitId/cancel', authUser, authRole(Role.CLIENT), controller.cancelVisit);
-router.get('/confirm/:token', controller.confirmVisit);
+// router.post('/', authUser, authRole(Role.USER), controller.createVisit);
+// router.put('/:visitId', authUser, authRole(Role.USER), controller.updateVisit);
+// router.delete('/:visitId', authUser, authRole(Role.USER), controller.deleteVisit);
+// router.put('/:visitId/reserve', authUser, authRole(Role.GUEST, Role.CLIENT), controller.reserveVisit);
+// router.put('/:visitId/cancel', authUser, authRole(Role.CLIENT), controller.cancelVisit);
+// router.get('/confirm/:token', controller.confirmVisit);
 
 export default router;

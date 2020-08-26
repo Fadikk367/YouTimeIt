@@ -14,9 +14,9 @@ import { errorHandler } from './middlewares/errorHandler';
 // import exampleRoute from './routes/exampleRoute';
 import registerRoute from './routes/register.route';
 import businessRoute from './routes/business.route';
-// import loginRoute from './routes/login.route';
+import loginRoute from './routes/login.route';
 // import serviceRoute from './routes/service.route';
-// import visitsRoute from './routes/visits.route';
+import visitsRoute from './routes/visits.route';
 
 // Import middlewares
 import { authUser } from './middlewares/authUser';
@@ -64,9 +64,9 @@ app.use(morgan('common'));
 // app.use('/example', authUser, exampleRoute);
 app.use('/register', registerRoute);
 app.use('/business', businessRoute);
-// app.use('/login', loginRoute);
+app.use('/login', loginRoute);
 // app.use('/services', authUser, serviceRoute);
-// app.use('/visits', visitsRoute);
+app.use('/visits', visitsRoute);
 
 app.use(errorParser);
 app.use(errorHandler);

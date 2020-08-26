@@ -41,6 +41,15 @@ export interface Auth {
   parentId: string; 
 }
 
+export interface RegisteredUser {
+  businessId: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
 
 export interface MyRequest<T> extends Request {
   body: T;

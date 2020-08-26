@@ -4,6 +4,7 @@ import { ServiceDoc } from './Service';
 import { ClientDoc } from './Client';
 import { Guest, GuestDoc } from './Guest';
 import { VisitStatus, Role } from './common';
+import { NotFound } from 'http-errors';
 
 interface VisitFilters {
   service?: string;
@@ -13,7 +14,7 @@ interface VisitFilters {
 
 
 export interface VisitAttrs {
-  businessId: UserDoc['_id'];
+  businessId?: UserDoc['_id'];
   date: Date;
   duration: string;
   location: string;
@@ -29,7 +30,10 @@ export interface VisitDoc extends Document {
   duration: string;
   location: string;
   status: VisitStatus;
-  service?: ServiceDoc['_id'];
+  service?: {
+    price: number;
+    serviceId: string;
+  };
   client?: ClientDoc['_id'];
   queue: string[];
   setService(service: ServiceDoc): void;
@@ -45,6 +49,7 @@ interface VisitModel extends Model<VisitDoc> {
   findAllByClientId(businessId: ClientDoc['_id']): Promise<VisitDoc[]>;
   findAllFree(): Promise<VisitDoc[]>;
   getVisits(businessId: string, filters?: VisitFilters): Promise<VisitDoc[]>;
+  getSingleVisit(visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc>;
 }
 
 
@@ -80,16 +85,16 @@ const VisitSchema = new Schema<VisitDoc>({
     default: []
   },
   service: {
-    type: {
-      price: Number,
-      serviceId: {
-        type: Types.ObjectId,
-        required: true,
-        ref: 'Service'
-      },
+    price: Number,
+    serviceId: {
+      type: Types.ObjectId,
+      required: true,
+      ref: 'Service'
+    },
   },
   client: {
     type: Types.ObjectId,
+    ref: 'User'
   }
 });
 
@@ -99,6 +104,26 @@ VisitSchema.statics.build = (doc: VisitAttrs): VisitDoc => {
 
 VisitSchema.statics.findAllByBusinessId = async (businessId: string): Promise<VisitDoc[]> => {
   return await Visit.find({ businessId });
+}
+
+VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc> => {
+  const query = Visit.findById(visitId);
+  console.log({options});
+
+  if (options?.extendClient) 
+    query.populate('client');
+  
+  if (options?.extendService) 
+    query.populate('service.serviceId', 'name _id description duration')
+
+    
+    const visit = await query.exec();
+    console.log(visit);
+
+  if (!visit) 
+    throw new NotFound('Visit not found');
+
+  return visit;
 }
 
 VisitSchema.statics.getVisits = async function(businessId: string, filters: VisitFilters): Promise<VisitDoc[]> {
@@ -132,7 +157,7 @@ VisitSchema.methods.reserve = async function(
 ): Promise<void> {
   console.log(`rezerwacja wizyty dla ${role === Role.GUEST ? 'NIE' : ''}zarejestrowanego klienta`);
   this.client = clientId;
-  this.service = serviceId;
+  // this.service = serviceId;
 
   if (role === Role.GUEST) this.status = VisitStatus.PENDING;
   else if (role === Role.CLIENT) this.status = VisitStatus.CONFIRMED;
@@ -142,7 +167,7 @@ VisitSchema.methods.reserve = async function(
 
 VisitSchema.methods.clear = async function(session?: ClientSession): Promise<void> {
   this.client = undefined;
-  this.service = undefined;
+  // this.service = undefined;
   this.status = VisitStatus.FREE;
 
   await this.save(session ? { session } : {});
