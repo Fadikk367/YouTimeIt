@@ -13,9 +13,5 @@ router.get('/:businessId/visits', controller.getVisits);
 
 router.get('/:businessId/services', controller.getServices);
 
-router.post('/:businessId/services', authUser, authRole(Role.ADMIN) ,controller.createService);
-
-router.post('/:businessId/visits', authUser, authRole(Role.ADMIN), controller.createVisit);
-
 
 export default router;

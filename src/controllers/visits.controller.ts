@@ -1,18 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { Visit, VisitAttrs } from '../models';
-import jwt from 'jsonwebtoken';
-
-import { handleReservation, checkTimingBeforeCancelling } from '../services/visit.services';
-import { generateToken } from '../services/common';
-import { VisitStatus } from '../models/common';
+import { Visit, Service, VisitAttrs, UserDoc } from '../models';
+import { NotFound } from 'http-errors';
 
 
 interface MyRequest<T> extends Request<{}, {}, T> {}
 
+interface VisitCreateRequest extends Request {
+  body: VisitAttrs;
+}
+
 const visitConfirmationTime = 1000*60*10;
 
-export const getSingleVisit= async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+
+export const getVisitById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const visitId = req.params.visitId;
   const { extend } = req.query;
 
@@ -26,34 +27,31 @@ export const getSingleVisit= async (req: Request, res: Response, next: NextFunct
 }
 
 
-// export const getAllVisits = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const parentId = req.auth?.parentId as string;
+export const createVisit = async (req: MyRequest<VisitAttrs>, res: Response, next: NextFunction) => {
+  const user = req.user as UserDoc;
+  const visitAttrs = req.body;
+  const serviceId = req.query.service;
 
-//   try {
-//     const visits = await Visit.findAllByParentId(parentId);
-//     res.json(visits);
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-// export const createVisit = async (req: MyRequest<VisitAttrs>, res: Response, next: NextFunction): Promise<void> => {
-//   const userId = req.auth?.id as string;
+    const visit = await Visit.build({ ...visitAttrs, businessId: user.businessId });
+    const service = await Service.findOne({ _id: serviceId, businessId: user.businessId }).session(session);
+    if(!service) 
+      throw new NotFound('Such service does not exist');
+    
+    visit.setService(service);
+    const createdVisit = await visit.save({ session });
 
-//   try {
-//     const visit = Visit.build({ 
-//       ...req.body,
-//       parentId: userId
-//     });
+    await session.commitTransaction();
+    session.endSession();
 
-//     const createdVisit= await visit.save();
-//     res.json(createdVisit);
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
+    res.status(201).json(createdVisit);
+  } catch(err) {
+    next(err);
+  }
+}
 
 
 // export const updateVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

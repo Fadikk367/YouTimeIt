@@ -38,8 +38,9 @@ export const authUser = async (req: Request, res: Response, next: NextFunction) 
 
 const handleUserAuthentification = async (req: Request, blueprint: TokenPayload): Promise<void> => {
   const user = await User.findOne({ _id: blueprint._id });
-  if (!user) 
+  if (!user) {
     throw new Unauthorized();
+  }
 
   console.log(user.businessId, req.params);
   if (!user.businessId.equals( req.params.businessId))

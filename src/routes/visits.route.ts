@@ -7,8 +7,8 @@ import { Role } from '../models/common';
 const router = Router();
 
 // router.get('/', authUser, controller.getAllVisits);
-router.get('/:visitId', authUser, controller.getSingleVisit);
-// router.post('/', authUser, authRole(Role.USER), controller.createVisit);
+router.get('/:visitId', authUser, authRole(Role.CLIENT, Role.ADMIN) ,controller.getVisitById);
+router.post('/', authUser, authRole(Role.ADMIN), controller.createVisit);
 // router.put('/:visitId', authUser, authRole(Role.USER), controller.updateVisit);
 // router.delete('/:visitId', authUser, authRole(Role.USER), controller.deleteVisit);
 // router.put('/:visitId/reserve', authUser, authRole(Role.GUEST, Role.CLIENT), controller.reserveVisit);

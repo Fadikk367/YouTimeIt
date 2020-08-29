@@ -10,14 +10,6 @@ interface ClientRegisterRequest extends Request {
   body: ClientAttrs;
 }
 
-interface ServiceCreateRequest extends Request {
-  body: ServiceAttrs;
-}
-
-interface VisitCreateRequest extends Request {
-  body: VisitAttrs;
-}
-
 interface VisitFilters {
   service?: string;
   page?: number;
@@ -71,41 +63,16 @@ export const getServices = async (req: Request, res: Response, next: NextFunctio
 }
 
 
-export const createService = async (req: ServiceCreateRequest, res: Response, next: NextFunction) => {
-  const user = req.user as UserDoc;
+export const bookVisit = async (req: Request, res: Response, next: NextFunction) => {
 
-  try {
-    const service = await Service.build({ ...req.body, businessId: user.businessId });
-    const createdService = await service.save();
-    res.status(201).json(createdService);
-  } catch(err) {
-    next(err);
-  }
 }
 
 
-export const createVisit = async (req: VisitCreateRequest, res: Response, next: NextFunction) => {
-  const user = req.user as UserDoc;
-  const visitAttrs = req.body;
-  const serviceId = req.query.service;
+export const cancelVisit = async (req: Request, res: Response, next: NextFunction) => {
+  
+}
 
-  try {
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
-    const visit = await Visit.build({ ...visitAttrs, businessId: user.businessId });
-    const service = await Service.findOne({ _id: serviceId, businessId: user.businessId }).session(session);
-    if(!service) 
-      throw new NotFound('Such service does not exist');
-    
-    visit.setService(service);
-    const createdVisit = await visit.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(201).json(createdVisit);
-  } catch(err) {
-    next(err);
-  }
+export const moveVisit = async (req: Request, res: Response, next: NextFunction) => {
+  
 }

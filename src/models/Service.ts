@@ -2,7 +2,7 @@ import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose
 import { UserDoc } from './User';
 
 export interface ServiceAttrs {
-  businessId?: string,
+  businessId?: Types.ObjectId,
   name: string,
   description: string,
   price: number,
@@ -12,7 +12,7 @@ export interface ServiceAttrs {
 
 
 export interface ServiceDoc extends Document {
-  businessId: string,
+  businessId: Types.ObjectId,
   name: string,
   description: string,
   price: number,
