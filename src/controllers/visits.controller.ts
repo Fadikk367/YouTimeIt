@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import { Visit, Service, VisitAttrs, UserDoc } from '../models';
+import { Visit, Service, VisitAttrs, UserDoc, VisitDoc } from '../models';
+import { VisitStatus } from '../models/common';
 import { NotFound } from 'http-errors';
+import jwt from 'jsonwebtoken';
+import { 
+  checkTimingBeforeCancelling, 
+  cehckIfVisitStatusIsPending, 
+  extractVisitIdFromToken, 
+  checkClientCompatibility 
+} from '../services/visit.services';
 
 
 interface MyRequest<T> extends Request<{}, {}, T> {}
@@ -54,105 +62,72 @@ export const createVisit = async (req: MyRequest<VisitAttrs>, res: Response, nex
 }
 
 
-// export const updateVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const userId = req.auth?.parentId;
-//   const visitId = req.params.visitId;
+export const updateVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const admin = req.user as UserDoc;
+  const visitId = req.params.visitId;
 
-//   try {
-//     // const deletedSerive = Service.findOneAndUpdate({ parentId: userId, _id: visitId }, {});
-//     console.log('visit update request');
-//     res.json({ });
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
-
-
-// export const deleteVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const userId = req.auth?.parentId as string;
-//   const visitId = req.params.visitId;
-
-//   try {
-//     const deletedVisit = await Visit.findOneAndDelete({ parentId: userId, _id: visitId });
-//     res.json({ deletedVisit, message: 'Successfully deleted visit' });
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
-
-// export const reserveVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const userId = req.auth?.parentId as string;
-//   const visitId = req.params.visitId;
-
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     let visit = await Visit.findOne({ _id: visitId, parentId: userId }).session(session);
-//     if (visit) {
-//       await handleReservation(visit, req, session);
-//       visit = await visit.save({ session: session });
-//     } else {
-//       throw new Error('Visit with given Id number does not exist');
-//     }
-//     await session.commitTransaction();
-//     session.endSession();
-
-//     res.json({ reservedVisit: visit, message: 'Successfully reserved visit'});
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
-
-// export const cancelVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const userId = req.auth?.parentId as string;
-//   const clientId = req.auth?.id as string;
-//   const visitId = req.params.visitId as string;
-//   console.log({ visitId, clientId });
-
-//   const session = await mongoose.startSession();
-//   session.startTransaction();
-
-//   try {
-//     const visit = await Visit.findOne({ _id: visitId }).session(session);
-//     console.log({ visit })
-//     if (visit && visit.client?.equals(clientId)) {
-//       checkTimingBeforeCancelling(visit);
-//       await visit.clear(session);
-//     } else {
-//       throw new Error('Visit with given Id number does not exist or You have not reserved it');
-//     }
-//     await session.commitTransaction();
-//     session.endSession();
-//     res.json({ message: 'Reservation has been canceled'});
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
+  try {
+    // const deletedSerive = Service.findOneAndUpdate({ parentId: userId, _id: visitId }, {});
+    res.json({ debug: 'visit update request'});
+  } catch(err) {
+    console.error(err);
+    next(err);
+  }
+}
 
 
-// export const confirmVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   const confirmationToken = req.params.token;
-//   const secret = process.env.TOKEN_SECRET as string;
+export const deleteVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const admin = req.user as UserDoc;
+  const visitId = req.params.visitId;
 
-//   try {
-//     const payload = jwt.verify(confirmationToken, secret) as { visitId: string };
-//     const visitId = payload.visitId;
+  try {
+    const deletedVisit = await Visit.findOneAndDelete({ _id: visitId, businessId: admin.businessId });
+    res.json({ deletedVisit, message: 'Successfully deleted visit' });
+  } catch(err) {
+    console.error(err);
+    next(err);
+  }
+}
 
-//     const visit = await Visit.findOne({ _id: visitId });
-//     if (visit && visit.status === VisitStatus.PENDING) {
-//       visit.status = VisitStatus.CONFIRMED;
-//       await visit.save();
-//     } else {
-//       throw new Error('It seems you run out of time, please try again');
-//     }
-//     res.status(200).json({ message: 'Your visit has been successfully confirmed!' });
-//   } catch(err) {
-//     console.error(err);
-//     next(err);
-//   }
-// }
+
+export const cancelVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const clientId = req.user?._id as string;
+  const visitId = req.params.visitId as string;
+  const session = await mongoose.startSession();
+  
+  try {
+    await session.withTransaction(async () => {
+      const visit = await Visit.getOne({ _id: visitId }, session);
+      checkClientCompatibility(visit, clientId);
+      await visit.cancel(session);
+    });
+
+    res.json({ message: 'Reservation has been canceled'});
+  } catch(err) {
+    next(err);
+  } finally {
+    session.endSession();
+  }
+}
+
+
+export const confirmVisit = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  const confirmationToken = req.params.token;
+  const session = await mongoose.startSession();
+
+  try {
+    const visitId = extractVisitIdFromToken(confirmationToken);
+
+    await session.withTransaction(async () => {
+      const visit = await Visit.getOne({ _id: visitId }, session);
+      cehckIfVisitStatusIsPending(visit);
+      await visit.confirm();
+    });
+
+    res.status(200).json({ message: 'Your visit has been successfully confirmed.' });
+  } catch(err) {
+    next(err);
+  } finally {
+    session.endSession();
+  }
+}

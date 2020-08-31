@@ -2,9 +2,11 @@ import  { Document, Model, Types, Schema, model, isValidObjectId, ClientSession 
 import { UserDoc } from './User';
 import { ServiceDoc } from './Service';
 import { ClientDoc } from './Client';
-import { Guest, GuestDoc } from './Guest';
 import { VisitStatus, Role } from './common';
-import { NotFound } from 'http-errors';
+import { NotFound, Gone } from 'http-errors';
+
+const MILISECONDS_IN_DAY = 1000*60*60*24;
+
 
 interface VisitFilters {
   service?: string;
@@ -25,26 +27,28 @@ export interface VisitAttrs {
 
 
 export interface VisitDoc extends Document {
-  businessId: UserDoc['_id'];
+  businessId: Types.ObjectId;
   date: Date;
   duration: string;
   location: string;
   status: VisitStatus;
-  service?: {
-    price: number;
-    serviceId: string;
-  };
-  client?: ClientDoc['_id'];
+  price: number;
+  service?: Types.ObjectId;
+  client?: Types.ObjectId;
   queue: string[];
   setService(service: ServiceDoc): void;
-  reserve(clientId: string, serviceId: string, role: Role, session: ClientSession): Promise<void>;
-  addToQueue(client: ClientData): Promise<void>;
+  reserve(user: UserDoc, session: ClientSession): Promise<VisitDoc>;
+  addToQueue(client: ClientDoc): Promise<void>;
   clear(session?: ClientSession): Promise<void>;
+  cancel(session?: ClientSession): Promise<void>;
+  confirm(): Promise<void>;
+  calculateRemainingTime(): number;
 }
 
 
 interface VisitModel extends Model<VisitDoc> {
   build(doc: VisitAttrs): VisitDoc;
+  getOne(filters: Object, session?: ClientSession): Promise<VisitDoc>;
   findAllByBusinessId(businessId: UserDoc['_id']): Promise<VisitDoc[]>;
   findAllByClientId(businessId: ClientDoc['_id']): Promise<VisitDoc[]>;
   findAllFree(): Promise<VisitDoc[]>;
@@ -84,13 +88,14 @@ const VisitSchema = new Schema<VisitDoc>({
     }],
     default: []
   },
+  price: {
+    type: Number,
+    required: true
+  },
   service: {
-    price: Number,
-    serviceId: {
-      type: Types.ObjectId,
-      required: true,
-      ref: 'Service'
-    },
+    type: Types.ObjectId,
+    required: true,
+    ref: 'Service'
   },
   client: {
     type: Types.ObjectId,
@@ -98,13 +103,16 @@ const VisitSchema = new Schema<VisitDoc>({
   }
 });
 
+
 VisitSchema.statics.build = (doc: VisitAttrs): VisitDoc => {
   return new Visit(doc);
 }
 
+
 VisitSchema.statics.findAllByBusinessId = async (businessId: string): Promise<VisitDoc[]> => {
   return await Visit.find({ businessId });
 }
+
 
 VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc> => {
   const query = Visit.findById(visitId);
@@ -114,7 +122,7 @@ VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendS
     query.populate('client');
   
   if (options?.extendService) 
-    query.populate('service.serviceId', 'name _id description duration')
+    query.populate('service', 'name _id description duration')
 
     
     const visit = await query.exec();
@@ -125,6 +133,7 @@ VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendS
 
   return visit;
 }
+
 
 VisitSchema.statics.getVisits = async function(businessId: string, filters: VisitFilters): Promise<VisitDoc[]> {
   const query = Visit.find();
@@ -142,42 +151,77 @@ VisitSchema.statics.getVisits = async function(businessId: string, filters: Visi
   return await query.exec();
 }
 
-VisitSchema.methods.setService = function(service: ServiceDoc): void {
-  this.service = {
-    price: service.price,
-    serviceId: service._id,
-  }
+
+VisitSchema.statics.getOne = async function (filters: Object, session?: ClientSession): Promise<VisitDoc> {
+  const query = Visit.findOne(filters);
+
+  if (session)
+    query.session(session);
+
+  const visit = await query.exec();
+  if (!visit)
+    throw new NotFound('Visit not found');
+
+  return visit;
 }
+
+
+VisitSchema.methods.setService = function(service: ServiceDoc): void {
+  this.service = service._id;
+}
+
 
 VisitSchema.methods.reserve = async function(
-  clientId: string, 
-  serviceId: string, 
-  role: Role,
+  user: UserDoc, 
   session: ClientSession
-): Promise<void> {
-  console.log(`rezerwacja wizyty dla ${role === Role.GUEST ? 'NIE' : ''}zarejestrowanego klienta`);
-  this.client = clientId;
-  // this.service = serviceId;
+): Promise<VisitDoc> {
+  console.log(`rezerwacja wizyty dla ${user.role === Role.GUEST ? 'NIE' : ''}zarejestrowanego klienta`);
+  this.client = user._id;
 
-  if (role === Role.GUEST) this.status = VisitStatus.PENDING;
-  else if (role === Role.CLIENT) this.status = VisitStatus.CONFIRMED;
+  if (user.role === Role.GUEST) this.status = VisitStatus.PENDING;
+  else if (user.role === Role.CLIENT) this.status = VisitStatus.CONFIRMED;
 
-  // await this.save({ session });
+  return await this.save({ session });
 }
+
 
 VisitSchema.methods.clear = async function(session?: ClientSession): Promise<void> {
   this.client = undefined;
-  // this.service = undefined;
   this.status = VisitStatus.FREE;
 
   await this.save(session ? { session } : {});
 }
 
 
-VisitSchema.methods.addToQueue = async function(client: ClientData): Promise<void> {
-  console.log('dodanie do kolejki zarejestrowanego klienta');
+VisitSchema.methods.cancel = async function(session?: ClientSession): Promise<void> {
+  const remainingTime = this.calculateRemainingTime();
+  if (remainingTime < MILISECONDS_IN_DAY)
+    throw new Gone('Sorry, time remaining to your visit is too short to cancel it');
+  
+  this.status = VisitStatus.FREE;
+  this.client = undefined;
+
+  await this.save({ session });
 }
 
+
+VisitSchema.methods.addToQueue = async function(client: ClientDoc, session?: ClientSession): Promise<void> {
+  this.queue.push(client._id);
+  await this.save({ session });
+}
+
+
+VisitSchema.methods.confirm = async function(): Promise<void> {
+  this.status = VisitStatus.CONFIRMED;
+  await this.save();
+}
+
+
+VisitSchema.methods.calculateRemainingTime = function(): number {
+  const currentTime = new Date();
+  const timeDifference = this.date.getTime() - currentTime.getTime();
+  return timeDifference;
+}
 
 
 export const Visit =  model<VisitDoc, VisitModel>('Visit', VisitSchema);

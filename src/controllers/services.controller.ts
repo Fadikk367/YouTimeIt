@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { Service, User, ServiceAttrs } from '../models';
-import { Role } from '../models/common';
+import { Service, User, ServiceAttrs, UserDoc } from '../models';
+import { NotFound } from 'http-errors';
 
 interface MyRequest<T> extends Request<{}, {}, T> {}
 
 
-
-export const getSingleService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const getServiceById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const parentId = req.auth?.parentId as string;
   const serviceId = req.params.serviceId;
 
@@ -20,38 +19,21 @@ export const getSingleService = async (req: Request, res: Response, next: NextFu
 }
 
 
-export const getAllServices = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const parentId = req.auth?.parentId as string;
+export const createService = async (req: MyRequest<ServiceAttrs>, res: Response, next: NextFunction) => {
+  const user = req.user as UserDoc;
 
   try {
-    const services = await Service.findAllByParentId(parentId);
-    res.json(services);
-  } catch(err) {
-    console.error(err);
-    next(err);
-  }
-}
-
-export const createService = async (req: MyRequest<ServiceAttrs>, res: Response, next: NextFunction): Promise<void> => {
-  const userId = req.auth?.id as string;
-
-  try {
-    const service = Service.build({ 
-      ...req.body,
-      parentId: userId
-    });
-
+    const service = await Service.build({ ...req.body, businessId: user.businessId });
     const createdService = await service.save();
-    res.json(createdService);
+    res.status(201).json(createdService);
   } catch(err) {
-    console.error(err);
     next(err);
   }
 }
 
 
 export const updateService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const userId = req.auth?.parentId;
+  const userId = req.user?.businessId;
   const serviceId = req.params.serviceId;
 
   try {
@@ -66,11 +48,14 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
 
 
 export const deleteService = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const userId = req.auth?.parentId as string;
+  const userId = req.user?.businessId;
   const serviceId = req.params.serviceId;
 
   try {
     const deletedSerive = await Service.findOneAndDelete({ parentId: userId, _id: serviceId });
+    if (!deleteService)
+      throw new NotFound();
+
     res.json({ deletedSerive, message: 'Successfully deleted service' });
   } catch(err) {
     console.error(err);

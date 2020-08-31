@@ -14,7 +14,7 @@ interface TokenPayload {
 
 export const authUser = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.header('auth-token');
-  console.log('auth user');
+
   try {
     if (token) {
       const secret = process.env.TOKEN_SECRET as string;
@@ -24,8 +24,6 @@ export const authUser = async (req: Request, res: Response, next: NextFunction) 
       if (Object.values(Role).includes(role)) {
         await handleUserAuthentification(req, blueprint);
       }
-    } else {
-      req.user = undefined;
     }
 
     next();

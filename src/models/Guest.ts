@@ -1,22 +1,13 @@
-import { Document, Model, Types, Schema, model, isValidObjectId } from 'mongoose';
-import { UserDoc } from './User'; 
-import { VisitDoc } from './Visit';
+import { Model, Types, Schema } from 'mongoose';
+import { UserAttrs, User, UserDoc } from './User'; 
 import { Role } from './common';
-import { emailValidator } from './common';
 
 
-export interface GuestAttrs extends ClientData {
-  parentId: UserDoc['_id'],
-}
 
-export interface GuestDoc extends Document {
-  parentId: UserDoc['_id'];
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  role: Role;
-  visits: VisitDoc['_id'][];
+export interface GuestAttrs extends UserAttrs { }
+
+export interface GuestDoc extends UserDoc {
+  visits: Types.ObjectId[];
 }
 
 interface GuestModel extends Model<GuestDoc> {
@@ -24,30 +15,6 @@ interface GuestModel extends Model<GuestDoc> {
 }
 
 const GuestSchema = new Schema({
-  parentId: {
-    type: Types.ObjectId,
-    ref: 'User',
-    required: true,
-    validate: (value: string): boolean => isValidObjectId(value)
-  },
-  firstName: {
-    type: String,
-    required: true,
-  },
-  lastName: {
-    type: String,
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    validate: { validator:  emailValidator }
-  },
-  phone: {
-    type: String,
-    required: true
-  },
   role: {
     type: String,
     default: Role.GUEST,
@@ -63,4 +30,4 @@ GuestSchema.statics.build = (doc: GuestAttrs): GuestDoc => {
   return new Guest(doc);
 }
 
-export const Guest = model<GuestDoc, GuestModel>('Guest', GuestSchema);
+export const Guest = User.discriminator<GuestDoc, GuestModel>('Guest', GuestSchema);

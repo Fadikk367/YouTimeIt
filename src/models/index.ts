@@ -4,3 +4,4 @@ export * from './Admin';
 export * from './Service';
 export * from './Visit';
 export * from './Business';
+export * from './Guest';

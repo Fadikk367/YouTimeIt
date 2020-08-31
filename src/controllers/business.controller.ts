@@ -2,8 +2,9 @@ import { Request, Response, NextFunction} from 'express';
 import { ClientAttrs, Visit, Service, ServiceAttrs, UserDoc, VisitAttrs } from '../models';
 import mongoose from 'mongoose';
 
-import { createClientAccount } from '../services/business.services';
-import { NotFound } from 'http-errors';
+import { createClientAccount, handleReservation } from '../services/business.services';
+import { NotFound, RequestHeaderFieldsTooLarge } from 'http-errors';
+import { ObjectId } from 'mongodb';
 
 
 interface ClientRegisterRequest extends Request {
@@ -64,13 +65,31 @@ export const getServices = async (req: Request, res: Response, next: NextFunctio
 
 
 export const bookVisit = async (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.user?._id as ObjectId;
+  const businessId = req.params.businessId;
+  const visitId = req.params.visitId;
 
+  try {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    let visit = await Visit.findOne({ _id: visitId, businessId }).session(session);
+    if (!visit) 
+      throw new Error('Visit with given Id number does not exist');
+      
+    await handleReservation(visit, req, session);
+    visit = await visit.save({ session: session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({ reservedVisit: visit, message: 'Successfully reserved visit'});
+  } catch(err) {
+    console.error(err);
+    next(err);
+  }
 }
 
-
-export const cancelVisit = async (req: Request, res: Response, next: NextFunction) => {
-  
-}
 
 
 export const moveVisit = async (req: Request, res: Response, next: NextFunction) => {
