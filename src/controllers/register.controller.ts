@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction} from 'express';
-import { AdminAttrs, BusinessAttrs, ClientAttrs } from '../models';
-import { Permissions } from '../models/common';
+import { User } from '../models';
+import { Permissions, Status } from '../models/common';
 import mongoose from 'mongoose';
 
 import { 
   createAdminAccount, 
   createBusinessEnitity,
+  extractUserIdFromToken,
 } from '../services/register.services';
 
 
@@ -47,11 +48,37 @@ export const registerAdmin = async (req: AdminRegisterRequest, res: Response, ne
     await admin.save({ session });
     await business.save({ session });
 
+    // TODO Send confirmation email
+
     await session.commitTransaction();
     session.endSession();
 
     res.json({ admin, business });
   } catch(err) {
     next(err);
+  }
+}
+
+
+export const confirmRegistration = async (req: Request, res: Response, next: NextFunction) => {
+  const confirmationToken = req.params.token;
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const userId = extractUserIdFromToken(confirmationToken);
+
+    await session.withTransaction(async () => {
+      const user = await User.getOne({ _id: userId }, session);
+      user.status = Status.CONFIRMED;
+      await user.confirm();
+    });
+
+    res.json({ message: 'Successfully confirmed account' });
+  } catch(err) {
+    next(err);
+  } finally {
+    session.endSession();
   }
 }
