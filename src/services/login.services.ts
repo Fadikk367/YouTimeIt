@@ -1,6 +1,7 @@
 import { Admin, Client, AdminDoc, ClientDoc } from '../models';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { BadRequest } from 'http-errors';
 
 
 export const findAccount = async (email: string): Promise<AdminDoc | ClientDoc> => {
@@ -8,7 +9,7 @@ export const findAccount = async (email: string): Promise<AdminDoc | ClientDoc> 
   if (!client) {
     const user = await Admin.findOne({ email });
     if(!user) {
-      throw new Error('Invalid email or password');
+      throw new BadRequest('Invalid email or password');
     }
     return user;
   }
@@ -19,7 +20,7 @@ export const checkPassword = async (password: string, account: AdminDoc | Client
   const isValidPassword = await bcrypt.compare(password, account.password);
   if (!isValidPassword) {
     // Statement about email included for security reasons
-    throw new Error('Invalid email or password');
+    throw new BadRequest('Invalid email or password');
   }
 }
 

@@ -7,5 +7,5 @@ export const errorHandler = (err: HttpError, req: Request, res: Response, next: 
     return;
   }
 
-  res.status(err.statusCode).json({ messages: err.message });
+  res.status(500).json({ messages: 'Something broke!' });
 }

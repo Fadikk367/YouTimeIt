@@ -13,7 +13,7 @@ interface TokenPayload {
 
 
 export const authUser = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.header('auth-token');
+  const token = req.headers['auth-token'] as string;
 
   try {
     if (token) {
@@ -28,7 +28,6 @@ export const authUser = async (req: Request, res: Response, next: NextFunction) 
 
     next();
   } catch(err) {
-    console.error(err);
     next(err);
   }
 }

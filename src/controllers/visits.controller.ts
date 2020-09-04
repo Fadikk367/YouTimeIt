@@ -67,8 +67,12 @@ export const updateVisit = async (req: Request, res: Response, next: NextFunctio
   const visitId = req.params.visitId;
 
   try {
-    // const deletedSerive = Service.findOneAndUpdate({ parentId: userId, _id: visitId }, {});
-    res.json({ debug: 'visit update request'});
+    const visit = await Visit.getOne({ _id: visitId });
+    const { serviceId, date } = req.body;
+    if (serviceId) visit.service = serviceId;
+    if (date) visit.date = date;
+    const updatedVisit = await visit.save();
+    res.json({ updatedVisit });
   } catch(err) {
     console.error(err);
     next(err);
