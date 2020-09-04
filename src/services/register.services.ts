@@ -1,36 +1,22 @@
 import bcrypt from 'bcrypt';
 import { ClientSession, isValidObjectId } from 'mongoose';
+import jwt from 'jsonwebtoken';
 
-import { User, Client, Business, UserDoc, Admin, AdminDoc, ClientAttrs, ClientDoc, AdminAttrs, BusinessAttrs, BusinessDoc } from '../models';
-import { EntitiesUniqueData } from '../models/common';
+import { Business, Admin, AdminDoc, AdminAttrs, BusinessAttrs, BusinessDoc } from '../models';
 import { hashPassword } from '../utils';
-
-// export const checkIfBusinessAlreadyExists = async (uniqueData: EntitiesUniqueData, session: ClientSession): Promise<void> => {
-
-// }
+import { BadRequest } from 'http-errors';
 
 
-// export const checkIfUserAlreadyExists = async (uniqueData: EntitiesUniqueData, session: ClientSession): Promise<void> => {
-//   const { email, phone } = uniqueData; 
-//   let businessName = uniqueData.businessName;
+export const extractUserIdFromToken = (token: string) => {
+  const secret = process.env.TOKEN_SECRET as string;
+  const payload = jwt.verify(token, secret) as { userId: string };
+  
+  const userId = payload.userId;
+  if (!userId)
+    throw new BadRequest('Invalid Confirmation Token');
 
-//   const client = await Client.findOne({$or: [{ email }, { phone }]}).session(session);
-//   const user = await User.findOne({$or: [{ email }, { phone }, businessName ? { businessName }: {}]}).session(session);
-
-//   if (client || user) {
-//     if (client?.email === email || user?.email === email) {
-//       throw new Error('An accaunt with given email already exists');
-//     }
-
-//     if (client?.phone === phone || user?.phone === phone) {
-//       throw new Error('An accaunt with given phone number already exists');
-//     }
-
-//     if (user?.businessName == businessName) {
-//       throw new Error('An accaunt with given businessName already exists');
-//     }
-//   }
-// }
+  return userId;
+}
 
 
 export const createAdminAccount = async (adminAttrs: AdminAttrs, session: ClientSession): Promise<AdminDoc> => {

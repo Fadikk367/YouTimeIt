@@ -21,6 +21,12 @@ export enum VisitStatus {
   CONFIRMED = 'CONFIRMED'
 }
 
+export enum Status {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  UNREGISTERED = 'UNREGISTERED',
+}
+
 export enum Permissions {
   VISITS_CREATE = 'VISITS_CREATE',
   VISITS_READ = 'VISITS_READ',

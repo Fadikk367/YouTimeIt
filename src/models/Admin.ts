@@ -1,5 +1,5 @@
 import mongoose, { Model, Types } from 'mongoose';
-import { Role, Permissions } from './common';
+import { Role, Permissions, Status } from './common';
 
 import { options, UserAttrs, UserDoc, User } from './User';
 
@@ -37,7 +37,7 @@ const AdminSpecificSchema = new mongoose.Schema<AdminDoc>({
 
 
 AdminSpecificSchema.statics.build = (doc: AdminAttrs): AdminDoc => {
-  return new Admin({ ...doc, role: Role.ADMIN });
+  return new Admin({ ...doc, role: Role.ADMIN, status: Status.PENDING });
 }
 
 

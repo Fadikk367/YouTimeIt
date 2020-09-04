@@ -1,5 +1,5 @@
 import mongoose, { Model, Types } from 'mongoose';
-import { Role } from './common';
+import { Role, Status } from './common';
 
 import { options, UserAttrs, UserDoc, User } from './User';
 
@@ -33,7 +33,7 @@ const ClientSpecificSchema = new mongoose.Schema<ClientDoc>({
 
 
 ClientSpecificSchema.statics.build = (doc: ClientAttrs): ClientDoc => {
-  return new Client({ ...doc, role: Role.CLIENT });
+  return new Client({ ...doc, role: Role.CLIENT, status: Status.PENDING });
 }
 
 
