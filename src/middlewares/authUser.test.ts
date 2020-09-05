@@ -37,7 +37,7 @@ beforeAll(async () => {
       useFindAndModify: false
     }, 
     () => {
-      // console.log(`Connected to the database`);
+      console.log(`Connected to the database`);
     }
   );
 
@@ -68,6 +68,7 @@ beforeAll(async () => {
     await mockClient.save();
     await mockAdmin.save();
     await mockBusiness.save();
+    console.log('mocks creation completed')
   } catch(err) {
     console.log('mock creation failed');
     console.log(err);
