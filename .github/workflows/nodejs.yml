@@ -20,5 +20,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Installing...
         run: npm install
+      - name: create .env file
+        run: |
+          touch .env
+          echo DB_CONNECT_TEST =${{ secrets.DB_CONNECT_TEST }} >> .env
+          echo TOKEN_SECRET =${{ secrets.TOKEN_SECRET }} >> .env
       - name: Running tests...
         run: npm test

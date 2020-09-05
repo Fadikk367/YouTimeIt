@@ -11,7 +11,7 @@ export const checkTimingBeforeCancelling = (visit: VisitDoc): void => {
   const { date } = visit;
   const currentTime = new Date();
   if (date.getTime() - currentTime.getTime() <= MILISECONDS_IN_DAY)
-    throw new Error('Sorry, it is too late to cancel your visit');
+    throw new Gone('Sorry, it is too late to cancel your visit');
 }
 
 

@@ -1,5 +1,5 @@
 import { ClientSession, isValidObjectId } from 'mongoose';
-import { Client, ClientAttrs, ClientDoc, Business, Guest } from '../models';
+import { Client, ClientAttrs, ClientDoc, Business, Guest, UserDoc } from '../models';
 import { hashPassword } from '../utils';
 import { Request } from 'express';
 import { Visit, VisitDoc, Service} from '../models';
@@ -32,7 +32,7 @@ export const createClientAccount = async (clientAttrs: ClientAttrs, session: Cli
 
 
 export const handleReservation = async (visit: VisitDoc, req: Request, session: ClientSession): Promise<void> => {
-  const { role, id } = req.auth as Auth;
+  const { role, _id } = req.user as UserDoc;
   const serviceId = req.query.service as string;
 
   const service = await Service.findOne({ _id: serviceId }).session(session);
@@ -41,7 +41,7 @@ export const handleReservation = async (visit: VisitDoc, req: Request, session: 
   if (role === Role.GUEST) {
     await handleGuestReservation(visit, req, session);
   } else if (role === Role.CLIENT) {
-    await handleClientReservation(visit, serviceId, id as string, session);
+    await handleClientReservation(visit, _id as string, session);
   }
 }
 
@@ -64,7 +64,7 @@ export const handleGuestReservation = async (
 
   await visit.reserve(guest, session);
   const confirmationToken = await generateToken({ visitId: visit._id }, visitConfirmationTime);
-  console.log(`${req.protocol}://localhost:5000/visits/${confirmationToken}/confirm`);
+  console.log(`${req.protocol}://localhost:5000/visits/confirm/${confirmationToken}`);
 
   const message = new EmailMessage(
     'Potwierdzenie wizyty',
@@ -84,7 +84,6 @@ export const handleGuestReservation = async (
 
 export const handleClientReservation = async (
   visit: VisitDoc, 
-  serviceId: string, 
   clientId: string, 
   session: ClientSession
 ): Promise<void> => {
@@ -100,8 +99,7 @@ export const checkVisitConfrmation = async (visitId: string): Promise<void> => {
   const visit = await Visit.findOne({ _id: visitId });
 
   if (visit) {
-    const status  = visit.status;
-    if (status !== VisitStatus.CONFIRMED) {
+    if (visit.status !== VisitStatus.CONFIRMED) {
       visit.status = VisitStatus.FREE;
       visit.client = undefined;
       visit.service = undefined;

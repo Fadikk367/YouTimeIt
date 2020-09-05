@@ -28,7 +28,7 @@ describe('Role authentification middleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  test('should reject request with invalid or missing user role value', () => {
+  it('should reject request with invalid or missing user role value', () => {
     const next = jest.fn();
     const req = {
       user: {
@@ -42,5 +42,5 @@ describe('Role authentification middleware', () => {
       {} as Response, 
       next as NextFunction
     )).toThrowError(Forbidden);
-  })
+  });
 })

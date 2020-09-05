@@ -12,7 +12,7 @@ export const hashPassword = async (password: string): Promise<string> => {
   return await bcrypt.hash(password, salt);
 }
 
-export const generateToken = async (payload: Object, expirationTime?: number): Promise<string> => {
+export const generateToken = async (payload: Object, expirationTime = 60*60): Promise<string> => {
   const secret = process.env.TOKEN_SECRET as string;
   const token = await jwt.sign(
     payload, 
