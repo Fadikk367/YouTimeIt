@@ -5,7 +5,7 @@ import { Role } from '../models/common';
 import { authRole } from './authRole';
 
 
-describe.skip('Role authentification middleware', () => {
+describe('Role authentification middleware', () => {
   it('should reject request if user does not exist', () => {
     const next = jest.fn() as NextFunction;
     const req = {
