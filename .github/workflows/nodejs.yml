@@ -30,7 +30,7 @@ jobs:
 
       - name: Installing...
         run: npm install
-
+          
       - name: Running tests...
         env:
           TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
