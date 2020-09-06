@@ -12,7 +12,7 @@ export interface BusinessAttrs {
 
 export interface BusinessDoc extends Document {
   name: string;
-  owner: string;
+  owner: Types.ObjectId;
   description: string;
   employees: string[];
   plan: Plan;

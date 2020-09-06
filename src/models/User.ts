@@ -74,6 +74,7 @@ const UserSchema = new mongoose.Schema<UserDoc>({
   },
 }, options);
 
+
 UserSchema.statics.build = (doc: UserAttrs): UserDoc => {
   return new User({ ...doc, role: Role.GUEST });
 }
