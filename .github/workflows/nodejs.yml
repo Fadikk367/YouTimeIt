@@ -11,19 +11,31 @@ jobs:
   build:
     name: Transpilation TS => JS and building APP
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [12.x]
+        mongodb-version: [4.2]
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Starting MongoDB...
+        uses: supercharge/mongodb-github-action@1.3.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+
       - name: Installing...
         run: npm install
+
       - name: Set env variables
-        run: echo token secret $TOKEN_SECRET
+        run: echo token secret ${TOKEN_SECRET}
         env:
           DB_CONNECT_TEST: ${{ secrets.DB_CONNECT_TEST }}
           TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
+          
       - name: Running tests...
         run: npm test

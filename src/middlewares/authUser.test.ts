@@ -26,10 +26,10 @@ beforeAll(async () => {
  // - create sample user
  // - login sample user to obtain auth-token
 
- const DB_CONNECT_TEST = process.env.DB_CONNECT_TEST as string;
+//  const DB_CONNECT_TEST = process.env.DB_CONNECT_TEST as string;
 
   mongoose.connect(
-    DB_CONNECT_TEST, 
+    'mongodb://localhost:27017', 
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
