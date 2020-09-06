@@ -24,7 +24,6 @@ export const createClientAccount = async (clientAttrs: ClientAttrs, session: Cli
 
   const client = Client.build({
     ...clientAttrs,
-    password: await hashPassword(clientAttrs.password)
   });
 
   return client;

@@ -1,7 +1,8 @@
 import { Admin, Client, AdminDoc, ClientDoc } from '../models';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import { BadRequest } from 'http-errors';
+import bcrypt, { compareSync } from 'bcrypt';
+import { BadRequest, NotFound } from 'http-errors';
+import { generateToken } from '../utils';
 
 
 export const findAccount = async (email: string): Promise<AdminDoc | ClientDoc> => {
@@ -9,7 +10,7 @@ export const findAccount = async (email: string): Promise<AdminDoc | ClientDoc> 
   if (!client) {
     const user = await Admin.findOne({ email });
     if(!user) {
-      throw new BadRequest('Invalid email or password');
+      throw new NotFound('Invalid email or password');
     }
     return user;
   }
@@ -17,21 +18,15 @@ export const findAccount = async (email: string): Promise<AdminDoc | ClientDoc> 
 }
 
 export const checkPassword = async (password: string, account: AdminDoc | ClientDoc): Promise<void> => {
-  const isValidPassword = await bcrypt.compare(password, account.password);
-  if (!isValidPassword) {
-    // Statement about email included for security reasons
-    throw new BadRequest('Invalid email or password');
-  }
+  const isPasswordCorrect = await bcrypt.compare(password, account.password);
+  if (!isPasswordCorrect) 
+    throw new NotFound('Invalid email or password');
 }
 
-export const generateToken = async (account: AdminDoc | ClientDoc): Promise<string> => {
-  const secret = process.env.TOKEN_SECRET as string;
-  const token = await jwt.sign({
+export const generateAuthToken = async (account: AdminDoc | ClientDoc): Promise<string> => {
+  const payload = {
     _id: account._id,
-    role: account.role
-  }, secret, {
-    expiresIn: 60*60*24*3
-  });
-
-  return token;
+    role: account.role,
+  };
+  return await generateToken(payload, 60*60*24*3);
 }

@@ -2,6 +2,7 @@ import mongoose, { Model, Types } from 'mongoose';
 import { Role, Status } from './common';
 
 import { options, UserAttrs, UserDoc, User } from './User';
+import { hashPassword } from '../utils';
 
 export interface ClientAttrs extends UserAttrs {
   password: string;
@@ -30,6 +31,13 @@ const ClientSpecificSchema = new mongoose.Schema<ClientDoc>({
     default: []
   }
 }, options);
+
+
+ClientSpecificSchema.pre<ClientDoc>('save', async function() {
+  if (this.isModified('password')) {
+    this.password = await hashPassword(this.password);
+  }
+});
 
 
 ClientSpecificSchema.statics.build = (doc: ClientAttrs): ClientDoc => {

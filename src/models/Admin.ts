@@ -2,6 +2,7 @@ import mongoose, { Model, Types } from 'mongoose';
 import { Role, Permissions, Status } from './common';
 
 import { options, UserAttrs, UserDoc, User } from './User';
+import { hashPassword } from '../utils';
 
 
 export interface AdminAttrs extends UserAttrs {
@@ -34,6 +35,13 @@ const AdminSpecificSchema = new mongoose.Schema<AdminDoc>({
     default: []
   }
 }, options);
+
+
+AdminSpecificSchema.pre<AdminDoc>('save', async function() {
+  if (this.isModified('password')) {
+    this.password = await hashPassword(this.password);
+  }
+});
 
 
 AdminSpecificSchema.statics.build = (doc: AdminAttrs): AdminDoc => {
