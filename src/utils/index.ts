@@ -14,6 +14,7 @@ export const hashPassword = async (password: string): Promise<string> => {
 
 export const generateToken = async (payload: Object, expirationTime = 60*60): Promise<string> => {
   const secret = process.env.TOKEN_SECRET as string;
+  console.log(`generateToken => secret: ${secret}`);
   const token = await jwt.sign(
     payload, 
     secret, {
