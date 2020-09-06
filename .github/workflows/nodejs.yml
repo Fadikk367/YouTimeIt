@@ -32,7 +32,7 @@ jobs:
         run: npm install
 
       - name: Set env variables
-        run: echo token secret ${TOKEN_SECRET}
+        run: echo "token secret=$TOKEN_SECRET"
         env:
           DB_CONNECT_TEST: ${{ secrets.DB_CONNECT_TEST }}
           TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
