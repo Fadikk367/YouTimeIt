@@ -94,7 +94,6 @@ const VisitSchema = new Schema<VisitDoc>({
   },
   service: {
     type: Types.ObjectId,
-    required: true,
     ref: 'Service'
   },
   client: {

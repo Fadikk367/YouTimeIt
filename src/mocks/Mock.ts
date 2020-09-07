@@ -1,4 +1,4 @@
-import { ClientDoc, Client, ClientAttrs, AdminAttrs, BusinessAttrs, AdminDoc, BusinessDoc, Admin, Business, User } from '../models';
+import { ClientDoc, Client, ClientAttrs, AdminAttrs, VisitAttrs, BusinessAttrs, ServiceAttrs, AdminDoc, BusinessDoc, Admin, Business, User, VisitDoc, Visit, ServiceDoc, Service } from '../models';
 import { Types } from 'mongoose';
 
 
@@ -6,6 +6,8 @@ export class Mock {
   private static businessInstance: BusinessDoc | undefined = undefined;
   private static clientInstance: ClientDoc | undefined = undefined;
   private static adminInstance: AdminDoc | undefined = undefined;
+  private static visitInstance: VisitDoc | undefined = undefined;
+  private static serviceInsance: ServiceDoc | undefined = undefined;
 
   static clientAttrs: ClientAttrs = {
     email: 'mock.client@gmail.com',
@@ -28,6 +30,19 @@ export class Mock {
     description: 'Mock business  description',
     name: 'Mock Business 001',
   };
+
+  static visitAttrs: VisitAttrs = {
+    date: new Date('2020-09-10T12:30:00'),
+    duration: '30min',
+    location: 'Kraków',
+  }
+
+  static serviceAttrs: ServiceAttrs = {
+    name: 'Mock service',
+    description: 'Mock service description',
+    duration: '30min',
+    price: 120,
+  }
 
   static async createClient(businessId?: Types.ObjectId): Promise<ClientDoc> {
     if (!Mock.clientInstance) {
@@ -84,14 +99,53 @@ export class Mock {
     return Mock.businessInstance;
   }
 
+  static async createVisit(businessId?: Types.ObjectId): Promise<VisitDoc> {
+    if (!Mock.visitInstance) {
+      const mockVisit = Visit.build(this.visitAttrs);
+      mockVisit.price = 100;
+  
+      if (businessId) {
+        mockVisit.businessId = businessId;
+      } else {
+        if (!Mock.businessInstance) {
+          Mock.businessInstance = await Mock.createBusiness();
+        }
+        mockVisit.businessId = Mock.businessInstance._id;
+      }
+  
+      Mock.visitInstance = await mockVisit.save();
+    }
+    return Mock.visitInstance;
+  }
+
+  static async createService(businessId?: Types.ObjectId): Promise<ServiceDoc> {
+    if (!Mock.serviceInsance) {
+      const mockService = Service.build(this.serviceAttrs);
+  
+      if (businessId) {
+        mockService.businessId = businessId;
+      } else {
+        if (!Mock.businessInstance) {
+          Mock.businessInstance = await Mock.createBusiness();
+        }
+        mockService.businessId = Mock.businessInstance._id;
+      }
+  
+      Mock.serviceInsance = await mockService.save();
+    }
+    return Mock.serviceInsance;
+  }
+
   static async clear(): Promise<void> {
     try {
       await User.deleteMany({});
       await Business.deleteMany({});
+      await Visit.deleteMany({});
 
       Mock.clientInstance = undefined;
       Mock.adminInstance = undefined;
       Mock.businessInstance = undefined;
+      Mock.visitInstance = undefined;
     } catch(err) {
       console.log('An Error occured during mock cleansing');
       console.error(err);
