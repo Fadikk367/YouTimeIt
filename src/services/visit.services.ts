@@ -1,5 +1,5 @@
 import { VisitDoc, UserDoc } from '../models';
-import { VisitStatus } from 'models/common';
+import { VisitStatus } from '../models/common';
 import { Gone, Unauthorized } from 'http-errors';
 import jwt from 'jsonwebtoken';
 
