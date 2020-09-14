@@ -1,5 +1,7 @@
 import { ClientDoc, Client, ClientAttrs, AdminAttrs, VisitAttrs, BusinessAttrs, ServiceAttrs, AdminDoc, BusinessDoc, Admin, Business, User, VisitDoc, Visit, ServiceDoc, Service } from '../models';
 import { Types } from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
 
 
 export class Mock {

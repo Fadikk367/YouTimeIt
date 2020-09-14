@@ -12,7 +12,7 @@ export const extractUserIdFromToken = (token: string) => {
   const payload = jwt.verify(token, secret) as { userId: string };
   
   const userId = payload.userId;
-  if (!userId)
+  if (!userId || !isValidObjectId(userId))
     throw new BadRequest('Invalid Confirmation Token');
 
   return userId;
@@ -33,7 +33,3 @@ export const createBusinessEnitity = (businessAttrs: BusinessAttrs, session: Cli
 
   return business;
 }
-
-
-
-

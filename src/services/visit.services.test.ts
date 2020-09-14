@@ -30,7 +30,7 @@ afterAll(async () => {
 });
 
 
-describe.only('Visit services', () => {
+describe('Visit services', () => {
   describe('checkTimingBeforeCancelling', () => {
     it('Should throw Gone error for cancel attempt less than 24h before visit', async () => {
       const visit = await Mock.createVisit();

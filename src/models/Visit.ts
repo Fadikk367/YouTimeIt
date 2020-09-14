@@ -49,8 +49,8 @@ export interface VisitDoc extends Document {
 interface VisitModel extends Model<VisitDoc> {
   build(doc: VisitAttrs): VisitDoc;
   getOne(filters: Object, session?: ClientSession): Promise<VisitDoc>;
-  findAllByBusinessId(businessId: UserDoc['_id']): Promise<VisitDoc[]>;
-  findAllByClientId(businessId: ClientDoc['_id']): Promise<VisitDoc[]>;
+  findByBusinessId(businessId: UserDoc['_id']): Promise<VisitDoc[]>;
+  findByClientId(clientid: ClientDoc['_id']): Promise<VisitDoc[]>;
   findAllFree(): Promise<VisitDoc[]>;
   getVisits(businessId: string, filters?: VisitFilters): Promise<VisitDoc[]>;
   getSingleVisit(visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc>;
@@ -108,9 +108,14 @@ VisitSchema.statics.build = (doc: VisitAttrs): VisitDoc => {
 }
 
 
-VisitSchema.statics.findAllByBusinessId = async (businessId: string): Promise<VisitDoc[]> => {
+VisitSchema.statics.findByBusinessId = async (businessId: string): Promise<VisitDoc[]> => {
   return await Visit.find({ businessId });
 }
+
+VisitSchema.statics.findByClientId = async (clientId: string): Promise<VisitDoc[]> => {
+  return await Visit.find({ client: clientId });
+}
+
 
 
 VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc> => {
