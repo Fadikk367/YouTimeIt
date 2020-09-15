@@ -1,4 +1,4 @@
-import { ClientDoc, Client, ClientAttrs, AdminAttrs, VisitAttrs, BusinessAttrs, ServiceAttrs, AdminDoc, BusinessDoc, Admin, Business, User, VisitDoc, Visit, ServiceDoc, Service } from '../models';
+import { ClientDoc, Client, ClientAttrs, AdminAttrs, VisitAttrs, BusinessAttrs, ServiceAttrs, AdminDoc, BusinessDoc, Admin, Business, User, VisitDoc, Visit, ServiceDoc, Service, GuestAttrs, GuestDoc, Guest } from '../models';
 import { Types } from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -10,6 +10,7 @@ export class Mock {
   private static adminInstance: AdminDoc | undefined = undefined;
   private static visitInstance: VisitDoc | undefined = undefined;
   private static serviceInsance: ServiceDoc | undefined = undefined;
+  private static guestInstance: GuestDoc | undefined = undefined;
 
   static clientAttrs: ClientAttrs = {
     email: 'mock.client@gmail.com',
@@ -17,6 +18,13 @@ export class Mock {
     lastName: 'Client',
     password: 'password',
     phone: '100100100',
+  };
+
+  static guestAttrs: GuestAttrs = {
+    email: 'mock.guest@gmail.com',
+    firstName: 'Mock',
+    lastName: 'Guest',
+    phone: '300300300',
   };
 
   static adminAttrs: AdminAttrs = {
@@ -44,6 +52,24 @@ export class Mock {
     description: 'Mock service description',
     duration: '30min',
     price: 120,
+  }
+
+  static async createGuest(businessId?: Types.ObjectId): Promise<GuestDoc> {
+    if (!Mock.guestInstance) {
+      const mockGuest = Guest.build(this.guestAttrs);
+  
+      if (businessId) {
+        mockGuest.businessId = businessId;
+      } else {
+        if (!Mock.businessInstance) {
+          Mock.businessInstance = await Mock.createBusiness();
+        }
+        mockGuest.businessId = Mock.businessInstance._id;
+      }
+  
+      Mock.guestInstance = await mockGuest.save();
+    }
+    return Mock.guestInstance;
   }
 
   static async createClient(businessId?: Types.ObjectId): Promise<ClientDoc> {
