@@ -2,8 +2,9 @@ import  { Document, Model, Types, Schema, model, isValidObjectId, ClientSession 
 import { UserDoc } from './User';
 import { ServiceDoc } from './Service';
 import { ClientDoc } from './Client';
-import { VisitStatus, Role } from './common';
-import { NotFound, Gone } from 'http-errors';
+import { VisitStatus, Role, Status } from './common';
+import { NotFound, Gone, Unauthorized, BadRequest } from 'http-errors';
+import { Session } from 'inspector';
 
 const MILISECONDS_IN_DAY = 1000*60*60*24;
 
@@ -35,10 +36,10 @@ export interface VisitDoc extends Document {
   price: number;
   service?: Types.ObjectId;
   client?: Types.ObjectId;
-  queue: string[];
+  queue: Types.ObjectId[];
   setService(service: ServiceDoc): void;
   reserve(user: UserDoc, session: ClientSession): Promise<VisitDoc>;
-  addToQueue(client: ClientDoc): Promise<void>;
+  addToQueue(client: UserDoc): Promise<void>;
   clear(session?: ClientSession): Promise<void>;
   cancel(session?: ClientSession): Promise<void>;
   confirm(): Promise<void>;
@@ -53,7 +54,7 @@ interface VisitModel extends Model<VisitDoc> {
   findByClientId(clientid: ClientDoc['_id']): Promise<VisitDoc[]>;
   findAllFree(): Promise<VisitDoc[]>;
   getVisits(businessId: string, filters?: VisitFilters): Promise<VisitDoc[]>;
-  getSingleVisit(visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc>;
+  getSingleVisit(visitId: string, options?: { extendService?: boolean, extendClient?: boolean, session?: ClientSession}): Promise<VisitDoc>;
 }
 
 
@@ -118,19 +119,20 @@ VisitSchema.statics.findByClientId = async (clientId: string): Promise<VisitDoc[
 
 
 
-VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendService?: boolean, extendClient?: boolean}): Promise<VisitDoc> => {
+VisitSchema.statics.getSingleVisit = async (visitId: string, options?: { extendService?: boolean, extendClient?: boolean, session?: ClientSession }): Promise<VisitDoc> => {
   const query = Visit.findById(visitId);
-  console.log({options});
+
+  if (options?.session)
+    query.session(options.session);
 
   if (options?.extendClient) 
     query.populate('client');
   
   if (options?.extendService) 
-    query.populate('service', 'name _id description duration')
+    query.populate('service', '_id name description duration')
 
     
-    const visit = await query.exec();
-    console.log(visit);
+  const visit = await query.exec();
 
   if (!visit) 
     throw new NotFound('Visit not found');
@@ -209,13 +211,25 @@ VisitSchema.methods.cancel = async function(session?: ClientSession): Promise<vo
 }
 
 
-VisitSchema.methods.addToQueue = async function(client: ClientDoc, session?: ClientSession): Promise<void> {
+VisitSchema.methods.addToQueue = async function(client: UserDoc, session?: ClientSession): Promise<void> {
+  if (client.role !== Role.CLIENT)
+    throw new Unauthorized('Only registered clients are allowed to enter the queue');
+
+  if (client.status !== Status.CONFIRMED)
+    throw new Unauthorized('Your account has not been confirmed yet');
+
+  if (this.client === client._id)
+    return;
+
   this.queue.push(client._id);
   await this.save({ session });
 }
 
 
 VisitSchema.methods.confirm = async function(): Promise<void> {
+  if (this.status !== VisitStatus.PENDING)
+    throw new BadRequest('Cannot confirm non PENDING visit')
+
   this.status = VisitStatus.CONFIRMED;
   await this.save();
 }
@@ -228,4 +242,4 @@ VisitSchema.methods.calculateRemainingTime = function(): number {
 }
 
 
-export const Visit =  model<VisitDoc, VisitModel>('Visit', VisitSchema);
+export const Visit = model<VisitDoc, VisitModel>('Visit', VisitSchema);
