@@ -2,7 +2,7 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import mongodb from 'mongodb';
 
-import { app } from '../app';
+import { app, server } from '../app';
 import { Mock } from '../mocks/Mock';
 import { generateToken } from '../utils';
 import { Admin, Business } from '../models';
@@ -25,6 +25,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await mongoose.disconnect();
+  server.close();
 });
 
 describe('register Controller', () => {

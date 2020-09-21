@@ -54,11 +54,10 @@ export const registerAdmin = async (req: AdminRegisterRequest, res: Response, ne
       // TODO Send confirmation email
       const confirmationToken = await generateToken({ userId: admin._id });
       // console.log({ confirmationToken });
-  
-  
     });
-    res.json({ admin, business });
+    
     session.endSession();
+    res.json({ admin, business });
   } catch(err) {
     next(err);
   }
@@ -77,8 +76,9 @@ export const confirmRegistration = async (req: Request, res: Response, next: Nex
       user.status = Status.CONFIRMED;
       await user.confirm();
     });
-    res.json({ message: 'Successfully confirmed account' });
+
     session.endSession();
+    res.json({ message: 'Successfully confirmed account' });
   } catch(err) {
     console.log('error catched');
     next(err);
