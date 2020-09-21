@@ -34,4 +34,5 @@ jobs:
       - name: Running tests...
         env:
           TOKEN_SECRET: ${{ secrets.TOKEN_SECRET }}
+          DB_CONNECT_TEST_REMOTE: ${{ secrets.DB_CONNECT_TEST_REMOTE }}
         run: npm test
