@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import bodyParser from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -18,9 +18,6 @@ import loginRoute from './routes/login.route';
 // import serviceRoute from './routes/service.route';
 import visitsRoute from './routes/visits.route';
 
-// Import middlewares
-import { authUser } from './middlewares/authUser';
-import { MongoError } from 'mongodb';
 
 // Load environmental variables if in development
 if (process.env.NODE_ENV !== 'production') {
@@ -32,26 +29,28 @@ const PORT = process.env.PORT || 3000;
 
 
 // Setup database connection
-const DB_CONNECT_DEBUG = process.env.DB_CONNECT_DEBUG as string;
+if (process.env.NODE_ENV !== 'test') {
+  const DB_CONNECT_DEBUG = process.env.DB_CONNECT_DEBUG as string;
 
-mongoose.connect(
-  DB_CONNECT_DEBUG, 
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-  }, 
-  () => {
-    console.log(`Connected to the database`);
-  }
-);
+  mongoose.connect(
+    DB_CONNECT_DEBUG, 
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      useCreateIndex: true,
+      useFindAndModify: false
+    }, 
+    () => {
+      console.log(`Connected to the database`);
+    }
+  );
+}
 
 GmailMailer.getInstance();
 GmailMailer.authentificate();
 
 
-const app = express();
+export const app = express();
 
 // Apply midlewares
 app.use(cors());
@@ -67,6 +66,9 @@ app.use('/business', businessRoute);
 app.use('/login', loginRoute);
 // app.use('/services', authUser, serviceRoute);
 app.use('/visits', visitsRoute);
+app.post('/req', (req, res, next) => {
+  res.status(201).json({ works: true });
+})
 
 app.use(errorParser);
 app.use(errorHandler);

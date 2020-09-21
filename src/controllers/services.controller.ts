@@ -6,11 +6,11 @@ interface MyRequest<T> extends Request<{}, {}, T> {}
 
 
 export const getServiceById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  const parentId = req.auth?.parentId as string;
+  const parentId = req.user?.businessId;
   const serviceId = req.params.serviceId;
 
   try {
-    const service = await Service.findOne({ parentId: parentId, _id: serviceId });
+    const service = await Service.findOne({ businessId: parentId, _id: serviceId });
     res.json(service);
   } catch(err) {
     console.error(err);

@@ -19,7 +19,7 @@ export const extractUserIdFromToken = (token: string) => {
 }
 
 
-export const createAdminAccount = async (adminAttrs: AdminAttrs, session: ClientSession): Promise<AdminDoc> => {
+export const createAdminAccount = (adminAttrs: AdminAttrs, session: ClientSession): AdminDoc => {
   const admin = Admin.build({
     ...adminAttrs,
   });

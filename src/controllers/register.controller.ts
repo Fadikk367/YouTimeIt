@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction} from 'express';
-import { User } from '../models';
+import { AdminDoc, BusinessDoc, User } from '../models';
 import { Permissions, Status } from '../models/common';
 import mongoose from 'mongoose';
 
@@ -8,6 +8,7 @@ import {
   createBusinessEnitity,
   extractUserIdFromToken,
 } from '../services/register.services';
+import { generateToken } from '../utils';
 
 
 interface AdminRegisterAttrs {
@@ -36,24 +37,28 @@ interface AdminRegisterRequest extends Request {
 
 export const registerAdmin = async (req: AdminRegisterRequest, res: Response, next: NextFunction) => {
   const { adminAttrs, businessAttrs } = req.body;
+  const session = await mongoose.startSession();
+
+  // session.startTransaction();
+
+  const admin = createAdminAccount(adminAttrs, session);
+  const business = createBusinessEnitity({ ...businessAttrs, owner: admin._id }, session);
 
   try {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    const admin = await createAdminAccount(adminAttrs, session);
-    const business = createBusinessEnitity({ ...businessAttrs, owner: admin._id }, session);
-    admin.businessId = business._id;
-
-    await admin.save({ session });
-    await business.save({ session });
-
-    // TODO Send confirmation email
-
-    await session.commitTransaction();
-    session.endSession();
-
+    await session.withTransaction(async () => {
+      admin.businessId = business._id;
+  
+      await admin.save({ session });
+      await business.save({ session });
+  
+      // TODO Send confirmation email
+      const confirmationToken = await generateToken({ userId: admin._id });
+      // console.log({ confirmationToken });
+  
+  
+    });
     res.json({ admin, business });
+    session.endSession();
   } catch(err) {
     next(err);
   }
@@ -64,21 +69,19 @@ export const confirmRegistration = async (req: Request, res: Response, next: Nex
   const confirmationToken = req.params.token;
   const session = await mongoose.startSession();
 
+  const userId = extractUserIdFromToken(confirmationToken);
+  
   try {
-    session.startTransaction();
-
-    const userId = extractUserIdFromToken(confirmationToken);
-
     await session.withTransaction(async () => {
       const user = await User.getOne({ _id: userId }, session);
       user.status = Status.CONFIRMED;
       await user.confirm();
     });
-
     res.json({ message: 'Successfully confirmed account' });
-  } catch(err) {
-    next(err);
-  } finally {
     session.endSession();
+  } catch(err) {
+    console.log('error catched');
+    next(err);
   }
+    
 }

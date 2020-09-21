@@ -28,7 +28,7 @@ export interface UserDoc extends Document {
   status: Status;
   createdAt: Date;
   updatedAt: Date;
-  confirm(): void;
+  confirm(): Promise<void>;
 }
 
 

@@ -9,7 +9,7 @@ import { EmailMessage, GmailMailer } from '../utils/mailer';
 import { GuestAttrs } from 'models/Guest';
 
 const visitConfirmationTime = 1000*60*10;
-const MILISECONDS_IN_DAY = 1000*60*60*24
+const MILISECONDS_IN_DAY = 1000*60*60*24;
 
 
 export const createClientAccount = async (clientAttrs: ClientAttrs, session: ClientSession): Promise<ClientDoc> => {
